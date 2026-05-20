@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#E66B3D">
+  <title>TailTrip</title>
+  <link rel="stylesheet" href="app.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main id="app" class="container">
+    <header class="brand">
+      <div class="brand-mark">🦊</div>
+      <div class="brand-text">
+        <div class="brand-title">TailTrip</div>
+        <div class="brand-tagline">plan a visit</div>
+      </div>
+    </header>
+
+    <!-- step indicator: 1—2—3—4 with current highlighted -->
+    <div class="steps" id="steps" aria-label="wizard progress">
+      <div class="step" data-step="1"><span class="step-num">1</span><span class="step-label">From</span></div>
+      <div class="step-rail"></div>
+      <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">When</span></div>
+      <div class="step-rail"></div>
+      <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">To</span></div>
+      <div class="step-rail"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="step-label">Confirm</span></div>
+    </div>
+
+    <!-- ===== STEP 1: ORIGIN ===== -->
+    <section class="card view" data-view="origin">
+      <h2>Where are you coming from?</h2>
+      <p class="muted">
+        Type a city, IATA code, or part of an airport name.
+      </p>
+
+      <div class="search-wrap">
+        <input
+          id="origin-q"
+          class="search-input"
+          type="search"
+          autocomplete="off"
+          autocapitalize="characters"
+          inputmode="search"
+          placeholder='e.g. "SJC", "San Jose", "JFK"'
+          spellcheck="false"
+        >
+      </div>
+      <ul class="results" id="origin-results" aria-live="polite"></ul>
+
+      <div id="origin-selection" class="selection hidden">
+        <div class="small">selected</div>
+        <div id="origin-line" class="selection-line"></div>
+      </div>
+
+      <div class="actions">
+        <button id="origin-next" class="btn btn-primary" disabled>
+          Next →
+        </button>
+        <button class="btn btn-ghost btn-close" data-action="close">
+          ✕ Cancel
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== STEP 2: DATES ===== -->
+    <section class="card view hidden" data-view="dates">
+      <h2>When are you traveling?</h2>
+      <p class="muted">
+        Pick a single day or a date range. Times come later — just the
+        days here.
+      </p>
+
+      <div class="date-fields">
+        <label class="date-label">
+          <span>Start</span>
+          <input id="date-start" class="date-input" type="date">
+        </label>
+        <label class="date-label" id="date-end-wrap">
+          <span>End <span class="small muted">(optional)</span></span>
+          <input id="date-end" class="date-input" type="date">
+        </label>
+      </div>
+
+      <div class="date-presets">
+        <button class="chip" data-preset="weekend">This weekend</button>
+        <button class="chip" data-preset="next-weekend">Next weekend</button>
+        <button class="chip" data-preset="next-week">Next week</button>
+        <button class="chip" data-preset="clear">Clear</button>
+      </div>
+
+      <div class="actions">
+        <button id="dates-next" class="btn btn-primary" disabled>
+          Next →
+        </button>
+        <button class="btn btn-ghost btn-back" data-target="origin">
+          ← Back
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== STEP 3: DESTINATION ===== -->
+    <section class="card view hidden" data-view="destination">
+      <h2>Where are you going?</h2>
+      <p class="muted">
+        Same search as before — city, IATA, or partial name.
+      </p>
+
+      <div class="search-wrap">
+        <input
+          id="dest-q"
+          class="search-input"
+          type="search"
+          autocomplete="off"
+          autocapitalize="characters"
+          inputmode="search"
+          placeholder='e.g. "SEA", "Seattle"'
+          spellcheck="false"
+        >
+      </div>
+      <ul class="results" id="dest-results" aria-live="polite"></ul>
+
+      <div id="dest-selection" class="selection hidden">
+        <div class="small">selected</div>
+        <div id="dest-line" class="selection-line"></div>
+      </div>
+
+      <div class="actions">
+        <button id="dest-next" class="btn btn-primary" disabled>
+          Next →
+        </button>
+        <button class="btn btn-ghost btn-back" data-target="dates">
+          ← Back
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== STEP 4: SUMMARY ===== -->
+    <section class="card view hidden" data-view="summary">
+      <h2>Looks good?</h2>
+      <p class="muted">
+        Confirm the trip name and submit. You can edit details later
+        from the trip's menu in chat.
+      </p>
+
+      <div class="summary-row">
+        <div class="summary-label">Trip name</div>
+        <input
+          id="trip-name"
+          class="search-input"
+          type="text"
+          maxlength="80"
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-label">From</div>
+        <div class="summary-value" id="summary-origin"></div>
+        <button class="btn-link" data-jump="origin">edit</button>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-label">When</div>
+        <div class="summary-value" id="summary-dates"></div>
+        <button class="btn-link" data-jump="dates">edit</button>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-label">To</div>
+        <div class="summary-value" id="summary-dest"></div>
+        <button class="btn-link" data-jump="destination">edit</button>
+      </div>
+
+      <div id="summary-target-note" class="muted small target-note hidden">
+        The board will land in <strong id="summary-target"></strong>.
+      </div>
+
+      <div class="actions">
+        <button id="submit-btn" class="btn btn-primary">
+          🦊 Create trip
+        </button>
+        <button class="btn btn-ghost btn-back" data-target="destination">
+          ← Back
+        </button>
+      </div>
+    </section>
+
+    <footer class="footnote">
+      <span>v0.4 · M4 wizard</span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+/* Live Board styles (M6). Loaded on top of app.css — only the new
+ * board-specific classes here. The 11-stage bar, per-traveler cards,
+ * route ribbons, and the sticky action row.
+ */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.traveler {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.traveler-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.traveler-handle {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.traveler-handle .you {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fox-orange);
+  margin-left: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.traveler-countdown {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.traveler-countdown.urgent {
+  color: var(--ember);
+  font-weight: 600;
+}
+
+/* ----- 11-stage progress bar -----
+ *
+ * Eleven dots in a row, filled up to the current stage. Compact on
+ * mobile; the dots wrap if the viewport's super narrow.
+ */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.stage-dot {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--hairline);
+  transition: background 0.18s ease;
+}
+
+.stage-dot.filled {
+  background: var(--fox-orange);
+}
+
+.stage-dot.current {
+  background: var(--fox-orange);
+  box-shadow: 0 0 0 2px rgba(230, 107, 61, 0.25);
+}
+
+.stage-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stage-label .stage-num {
+  font-family: var(--font-mono);
+  color: var(--fox-orange);
+  font-weight: 600;
+}
+
+/* ----- mini route ribbon -----
+ *
+ * 🏠 Home — 🚗 — ✈️ SJC kind of compact route summary, one row.
+ */
+.ribbon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.ribbon-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ribbon-iata {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fox-orange);
+  letter-spacing: 0.04em;
+}
+
+.ribbon-mode {
+  font-size: 13px;
+  color: var(--ink-muted);
+  padding: 0 4px;
+}
+
+.ribbon-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ----- status note -----
+ *
+ * One-line per-traveler footer (✅ on schedule / ⚠️ unconfirmed / etc).
+ */
+.traveler-note {
+  font-size: 13px;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.traveler-note.warn { color: var(--ember); font-weight: 500; }
+.traveler-note.ok   { color: var(--forest); }
+
+/* ----- empty / error states ----- */
+
+.empty, .error {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.error {
+  color: var(--ember);
+}
+
+/* ----- sticky action row (refresh / close) -----
+ *
+ * Float at bottom of the viewport so the action's always reachable
+ * even on long trips with many travelers.
+ */
+.sticky-actions {
+  position: sticky;
+  bottom: 8px;
+  background: var(--cream);
+  padding-top: 12px;
+  /* No box-shadow so we don't bleed into the cards above; the spacing
+   * itself signals separation. */
+}

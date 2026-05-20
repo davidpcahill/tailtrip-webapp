@@ -1,0 +1,567 @@
+/* TailTrip Mini App — fox theme.
+ *
+ * Vanilla CSS, no preprocessor. Custom properties drive the palette so
+ * future themes (or Telegram's themeParams) can override. Designed for
+ * mobile-first (Telegram Mini Apps usually viewed on phones); falls back
+ * to a card layout on wider viewports.
+ *
+ * Telegram supplies its own theme variables on the <body>:
+ *   --tg-theme-bg-color, --tg-theme-text-color, etc.
+ * We override these with our brand palette so the app looks the same
+ * regardless of the user's Telegram theme. If you want native-Telegram
+ * theming later, drop the brand overrides on dark mode media queries.
+ */
+
+:root {
+  --fox-orange:     #E66B3D;
+  --fox-orange-dim: #C25425;
+  --cream:          #FAF6F0;
+  --surface:        #FFFFFF;
+  --ink:            #2D2A26;
+  --ink-muted:      #6E6862;
+  --hairline:       #E5DED4;
+  --sky:            #4A90A4;
+  --forest:         #5C8A3E;
+  --ember:          #C44536;
+  --shadow-sm:      0 1px 3px rgba(45, 42, 38, 0.08);
+  --shadow-md:      0 4px 12px rgba(45, 42, 38, 0.12);
+  --radius:         10px;
+  --radius-lg:      16px;
+  --font:           "Inter", -apple-system, BlinkMacSystemFont,
+                    "Segoe UI", sans-serif;
+  --font-mono:      "JetBrains Mono", ui-monospace, "SF Mono",
+                    Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Reduce font scale on huge desktops; Telegram on iPad can be wide */
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--cream);
+  /* Telegram Mini App safe-area on iPhone notch */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ----- brand header ----- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.brand-mark {
+  font-size: 36px;
+  line-height: 1;
+  /* Subtle drop shadow gives the fox emoji a hint of depth without
+   * being kitsch. */
+  filter: drop-shadow(0 1px 1px rgba(45, 42, 38, 0.12));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.brand-tagline {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* ----- cards / views ----- */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--hairline);
+}
+
+.card h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+
+.card p {
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.muted {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 8px 0 16px;
+  /* Wrap long content rather than horizontal-scrolling — Mini App
+   * viewports are narrow */
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--ink-muted);
+}
+
+/* ----- buttons ----- */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  /* Touch-comfortable target — 44pt is Apple's minimum */
+  min-height: 44px;
+  /* Snappy press feedback without external libs */
+  transition: transform 0.08s ease, background-color 0.12s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--fox-orange);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background: var(--fox-orange-dim);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+}
+
+.btn-ghost:hover {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+/* ----- footnote ----- */
+
+.footnote {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+  padding: 8px 0 16px;
+}
+
+/* ----- search + results (M2 airport picker) ----- */
+
+.search-wrap {
+  position: relative;
+  margin: 4px 0 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 16px;  /* ≥16px on iOS to prevent zoom-on-focus */
+  color: var(--ink);
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.search-input:focus {
+  border-color: var(--fox-orange);
+  background: var(--surface);
+}
+
+.search-input::placeholder {
+  color: var(--ink-muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.results {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  /* Cap height so a long list doesn't push the action buttons off
+   * screen. Internal scroll. */
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.results-empty {
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-style: italic;
+  padding: 8px 4px;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  cursor: pointer;
+  /* Tappable on mobile */
+  min-height: 44px;
+  transition: background 0.12s ease, transform 0.08s ease,
+              border-color 0.12s ease;
+}
+
+.result:hover,
+.result:focus {
+  background: var(--surface);
+  border-color: var(--fox-orange);
+}
+
+.result:active {
+  transform: scale(0.99);
+}
+
+.result.selected {
+  border-color: var(--fox-orange);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px rgba(230, 107, 61, 0.18);
+}
+
+.result-iata {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fox-orange);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+  /* Fixed width so all IATA badges align in a column */
+  min-width: 48px;
+  text-align: center;
+}
+
+.result-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;  /* allow text to ellipsize */
+}
+
+.result-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-where {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.selection {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: rgba(230, 107, 61, 0.08);
+  border: 1px solid rgba(230, 107, 61, 0.32);
+  border-radius: var(--radius);
+}
+
+.selection .small {
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  color: var(--fox-orange-dim);
+}
+
+.selection-line {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ----- step indicator (M4 wizard) -----
+ *
+ * 1 ─ 2 ─ 3 ─ 4 horizontal pill. Current step is fox-orange filled,
+ * past steps are filled-but-dim, future steps are outlined-only.
+ * Rails between numbers fill as steps complete.
+ */
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  color: var(--ink-muted);
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.step-label {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.step.active .step-num {
+  background: var(--fox-orange);
+  border-color: var(--fox-orange);
+  color: white;
+}
+
+.step.active .step-label {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.step.done .step-num {
+  background: var(--fox-orange-dim);
+  border-color: var(--fox-orange-dim);
+  color: white;
+}
+
+.step-rail {
+  flex: 1 1 auto;
+  height: 2px;
+  background: var(--hairline);
+  border-radius: 1px;
+  transition: background 0.15s ease;
+  /* Avoid the rail occupying the same vertical as the labels */
+  margin-bottom: 16px;
+}
+
+.step-rail.done {
+  background: var(--fox-orange-dim);
+}
+
+/* ----- date pickers (step 2) ----- */
+
+.date-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.date-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.date-input {
+  font: inherit;
+  font-size: 16px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  outline: none;
+  /* Pad the calendar icon Telegram/iOS adds */
+  min-height: 44px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.date-input:focus {
+  border-color: var(--fox-orange);
+  background: var(--surface);
+}
+
+.date-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease,
+              transform 0.08s ease;
+}
+
+.chip:hover {
+  border-color: var(--fox-orange);
+  color: var(--fox-orange);
+}
+
+.chip:active {
+  transform: scale(0.98);
+}
+
+/* ----- summary view (step 4) ----- */
+
+.summary-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.summary-row:first-of-type {
+  border-top: none;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-value {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Span the input full-width on the trip-name row */
+.summary-row:has(.search-input) {
+  grid-template-columns: 80px 1fr;
+}
+.summary-row:has(.search-input) .search-input {
+  font-size: 15px;
+  padding: 8px 12px;
+  min-height: 36px;
+}
+
+.btn-link {
+  font: inherit;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  color: var(--fox-orange);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.target-note {
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  background: var(--cream);
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+}
+
+/* ----- dark mode override (matches Telegram dark theme) -----
+ *
+ * We respect the user's OS preference. Brand orange + fox glyph stay
+ * the same; surface + ink invert. Keeps the bot recognizable in both
+ * modes without two separate stylesheets.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cream:     #1F1C19;
+    --surface:   #2A2622;
+    --ink:       #F5EFE6;
+    --ink-muted: #B0A99F;
+    --hairline:  #3A3530;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+}

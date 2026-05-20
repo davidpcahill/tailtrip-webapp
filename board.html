@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#E66B3D">
+  <title>TailTrip · Live Board</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="board.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main id="app" class="container">
+    <!--
+      Brand row + trip header (trip name, status pill, dates, traveler count).
+      Populated from the snapshot in URL params; see board.js.
+    -->
+    <header class="brand">
+      <div class="brand-mark">🦊</div>
+      <div class="brand-text">
+        <div class="brand-title" id="trip-name">…</div>
+        <div class="brand-tagline" id="trip-meta">loading…</div>
+      </div>
+    </header>
+
+    <section id="board" class="board" aria-live="polite">
+      <!-- per-traveler cards rendered by board.js -->
+    </section>
+
+    <div id="empty" class="empty hidden">
+      <p>No travelers on this trip yet.</p>
+    </div>
+
+    <div id="error" class="error hidden">
+      <p>⚠️ Couldn't load the board snapshot. Tap <strong>Refresh</strong> in chat to try again.</p>
+    </div>
+
+    <div class="actions sticky-actions">
+      <button id="refresh" class="btn btn-primary">
+        ↻ Refresh
+      </button>
+      <button id="close" class="btn btn-ghost">
+        ✕ Close
+      </button>
+    </div>
+
+    <footer class="footnote">
+      <span id="footer-text">v0.6 · M6 live board</span>
+    </footer>
+  </main>
+
+  <script src="board.js"></script>
+</body>
+</html>
