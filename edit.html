@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#E66B3D">
+  <title>TailTrip · Editor</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="edit.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main id="app" class="container">
+    <header class="brand">
+      <div class="brand-mark">🦊</div>
+      <div class="brand-text">
+        <div class="brand-title" id="trip-name">…</div>
+        <div class="brand-tagline" id="trip-meta">loading…</div>
+      </div>
+    </header>
+
+    <!--
+      Chain rendered by edit.js: Place row → Travel row → Place row →
+      Travel row → … Each place is numbered; each travel sits between
+      its two places and gets a Remove button. Currently this push
+      is display + remove only. Add/edit redirect users to chat.
+    -->
+    <section id="chain" class="chain" aria-live="polite"></section>
+
+    <div id="empty" class="empty hidden">
+      <p>No travel events on this trip yet.</p>
+      <p class="muted">Add legs via <code>/trips → Open → 🚗 Travel</code> in the trip's group chat.</p>
+    </div>
+
+    <div id="error" class="error hidden">
+      <p>⚠️ Couldn't load the trip snapshot. Tap <strong>Refresh</strong> below to try again.</p>
+    </div>
+
+    <div class="actions sticky-actions">
+      <button id="refresh" class="btn btn-primary">↻ Refresh</button>
+      <button id="close" class="btn btn-ghost">✕ Close</button>
+    </div>
+
+    <div class="muted small footer-hint">
+      <p>
+        <strong>Adding</strong> or <strong>editing</strong> individual legs?
+        Use <code>/trips → Open → 🚗 Travel</code> in the trip's group chat for now.
+        Drag-reorder lands in a future push.
+      </p>
+    </div>
+
+    <footer class="footnote">
+      <span>v0.7 · M7 sequenced editor</span>
+    </footer>
+  </main>
+
+  <script src="edit.js"></script>
+</body>
+</html>

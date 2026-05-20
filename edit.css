@@ -1,0 +1,213 @@
+/* Sequenced editor (M7) — alternating Place / Travel rows with a
+ * leftrail that visually chains them. Heavily uses the shared
+ * design tokens from app.css; only structure-specific styles live here.
+ */
+
+.chain {
+  display: flex;
+  flex-direction: column;
+  /* No row gap — the rail line needs to connect rows seamlessly.
+   * Per-row padding gives the breathing room. */
+  gap: 0;
+}
+
+/* ===== Place row =====
+ *
+ *   ╭───────────────────────────────╮
+ *   │ [#] 🏠 Tag's                  │
+ *   │     San Jose, CA              │
+ *   ╰───────────────────────────────╯
+ */
+
+.place-row {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: center;
+  /* The rail rendered by the .rail row below tucks under this one */
+  position: relative;
+  z-index: 1;
+}
+
+.place-num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.place-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.place-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.place-name .icon {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.place-where {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ===== Travel row =====
+ *
+ * A travel event between two places. Visually indented with a left
+ * rail "│   ↓" cue that connects to the place rows above/below.
+ */
+
+.travel-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  margin: 4px 0;
+  background: var(--cream);
+  border-left: 3px solid var(--fox-orange);
+  /* Slight left margin so the rail aligns with the place-num column */
+  margin-left: 8px;
+  margin-right: 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.travel-row.is-request {
+  /* Open ride request — yellow accent to distinguish from filled legs */
+  border-left-color: var(--ember);
+  background: rgba(196, 69, 54, 0.05);
+}
+
+.travel-icon {
+  font-size: 20px;
+  text-align: center;
+}
+
+.travel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.travel-summary {
+  font-size: 14px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.travel-summary .iata {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fox-orange);
+  padding: 2px 6px;
+  background: var(--surface);
+  border-radius: 4px;
+  border: 1px solid var(--hairline);
+}
+
+.travel-summary .flight-no {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.travel-meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.travel-meta .open-request-tag {
+  color: var(--ember);
+  font-weight: 600;
+}
+
+.travel-remove {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--ember);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-height: 36px;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.travel-remove:hover {
+  background: rgba(196, 69, 54, 0.08);
+}
+
+.travel-remove:active {
+  transform: scale(0.97);
+}
+
+/* ===== empty / error states ===== */
+
+.empty, .error {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.error {
+  color: var(--ember);
+}
+
+.footer-hint {
+  margin: 8px 0;
+  padding: 12px 14px;
+  background: var(--cream);
+  border-left: 3px solid var(--sky);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+}
+
+.footer-hint code {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fox-orange-dim);
+}
+
+.sticky-actions {
+  position: sticky;
+  bottom: 8px;
+  background: var(--cream);
+  padding-top: 12px;
+}
+
+/* ----- confirmation banner shown after a leg is queued for removal ----- */
+
+.removing-banner {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: rgba(230, 107, 61, 0.08);
+  border: 1px solid rgba(230, 107, 61, 0.32);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--ink);
+}
