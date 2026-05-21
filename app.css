@@ -648,6 +648,56 @@ body {
 }
 
 /* ===========================================================
+ * W2.5 "Copy from past trip" header
+ *
+ * Rendered at the top of the wizard. Each row: name + route on
+ * the left, "Copy →" button on the right. The picker's clear() +
+ * addValues() pair handles successive copies without accumulating.
+ * =========================================================== */
+
+.past-trips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.past-trip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+}
+
+.past-trip-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.past-trip-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.past-trip-route {
+  font-size: 0.85em;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.btn-copy {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
+/* ===========================================================
  * W2.5 flight info + ride asks
  *
  * Flight: number input on its own line, times side-by-side.

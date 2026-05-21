@@ -65,6 +65,23 @@
   }
   const CHAT_CANDIDATES = decodeChats(CHATS_ENCODED);
 
+  // W2.5: past-trips decoder mirrors the Python encoder in
+  // src/tailtrip/bot/past_trips.py. Defensive — never throws.
+  function decodePastTrips(encoded) {
+    if (!encoded) return [];
+    try {
+      const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
+      const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data.filter((t) => t && typeof t === "object");
+    } catch (err) {
+      console.warn("past_trips decode failed:", err);
+      return [];
+    }
+  }
+  const PAST_TRIPS = decodePastTrips(url.get("past") || null);
+
   if (TARGET_CHAT_NAME || TARGET_CHAT_ID) {
     const banner = document.getElementById("target-banner");
     const nameEl = document.getElementById("target-banner-name");
@@ -569,6 +586,18 @@
         renderChips();
         renderDropdown();
       },
+      // W2.5: bulk-add — used by the "Copy from past trip" header.
+      // Each entry is `{handle, via}`. Skips duplicates already in
+      // `selected` (preserves the prior selection order).
+      addValues: (entries) => {
+        for (const e of entries || []) {
+          if (!e || !e.handle) continue;
+          if (isAlreadySelected(e.handle)) continue;
+          selected.push({ handle: e.handle, via: e.via || "custom" });
+        }
+        renderChips();
+        renderDropdown();
+      },
     };
   }
 
@@ -625,6 +654,118 @@
   }
   wireRideRadios("to");
   wireRideRadios("from");
+
+  // ----- W2.5 past-trips header (Copy from a past trip) -----
+  // Render up to 5 rows. Each row has a "Copy" button that fills in
+  // every form field we can recover from the past trip. Dates are
+  // intentionally NOT copied — the whole point of a new trip is new
+  // dates. Same for flight number, ride choices.
+  function renderPastTrips() {
+    const section = document.getElementById("past-trips-section");
+    const listEl = document.getElementById("past-trips-list");
+    if (!PAST_TRIPS.length) {
+      section.classList.add("hidden");
+      return;
+    }
+    section.classList.remove("hidden");
+    listEl.innerHTML = "";
+    for (const t of PAST_TRIPS) {
+      const row = document.createElement("div");
+      row.className = "past-trip-row";
+      const summary = document.createElement("div");
+      summary.className = "past-trip-summary";
+      const title = document.createElement("div");
+      title.className = "past-trip-title";
+      title.textContent = t.name || "(unnamed)";
+      const route = document.createElement("div");
+      route.className = "past-trip-route";
+      const r = [];
+      if (t.origin) r.push("✈️ " + t.origin);
+      if (t.dest) r.push("✈️ " + t.dest);
+      const peopleCount =
+        (t.trav || []).length + (t.appr || []).length + (t.notif || []).length;
+      if (peopleCount > 0) r.push(peopleCount + " people");
+      route.textContent = r.join(" · ") || "(no route)";
+      summary.appendChild(title);
+      summary.appendChild(route);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-ghost btn-copy";
+      btn.textContent = "Copy →";
+      btn.addEventListener("click", () => applyPastTrip(t));
+      row.appendChild(summary);
+      row.appendChild(btn);
+      listEl.appendChild(row);
+    }
+  }
+
+  /**
+   * Apply a past-trip prefill into the wizard form.
+   *
+   * Sets:
+   *   - trip name (prefixed with "Re: ")
+   *   - origin/destination by IATA (looks up the full record in
+   *     the loaded airports.json so the selection state carries
+   *     city/country/region for the renderer)
+   *   - traveler / notify / approver pickers (each picker's clear()
+   *     before re-adding so successive "Copy" taps don't double up)
+   *   - announce-mode + min-approvals radios
+   *
+   * Does NOT touch dates, flight-info, or ride radios — those are
+   * trip-specific and shouldn't carry over.
+   */
+  function applyPastTrip(t) {
+    // 1. Trip name (prefixed so the user knows it's a copy)
+    if (t.name) {
+      const el = document.getElementById("trip-name");
+      el.value = "Re: " + t.name;
+      lastAutoFill = el.value;
+    }
+    // 2. Origin / destination — resolve IATA → full airport record
+    if (t.origin && airports.length) {
+      const a = airports.find((x) => x.iata === t.origin);
+      if (a) {
+        selected.origin = a;
+        document.getElementById("origin-q").value = "";
+        renderPicker("origin");
+      }
+    }
+    if (t.dest && airports.length) {
+      const a = airports.find((x) => x.iata === t.dest);
+      if (a) {
+        selected.destination = a;
+        document.getElementById("dest-q").value = "";
+        renderPicker("dest");
+      }
+    }
+    // 3. People pickers — clear then bulk-add so successive copies
+    //    don't accumulate. `addValues` was added to the picker
+    //    factory for exactly this case.
+    travelerPicker.clear();
+    notifyPicker.clear();
+    approverPicker.clear();
+    travelerPicker.addValues((t.trav || []).map((h) => ({ handle: h, via: "custom" })));
+    notifyPicker.addValues((t.notif || []).map((h) => ({ handle: h, via: "custom" })));
+    approverPicker.addValues((t.appr || []).map((h) => ({ handle: h, via: "custom" })));
+    // 4. Pin mode + min approvals
+    if (t.mode) {
+      const radio = document.querySelector(
+        'input[name="announce-mode"][value="' + t.mode + '"]'
+      );
+      if (radio) radio.checked = true;
+    }
+    if (t.min !== undefined && t.min !== null) {
+      const v = t.min === -1 ? "all" : String(t.min);
+      const radio = document.querySelector(
+        'input[name="min-approvals"][value="' + v + '"]'
+      );
+      if (radio) radio.checked = true;
+    }
+    refreshSubmitGate();
+    // Scroll up so the user sees the prefill landed.
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  renderPastTrips();
 
   // ----- submit -----
 

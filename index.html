@@ -52,6 +52,21 @@
       </div>
     </div>
 
+    <!-- ===== COPY FROM PAST (W2.5) =====
+         Only shown when the bot included a `past=` URL param (which
+         happens when the user has any non-cancelled trips). Lets
+         the user prefill all the roster + routing in one tap. Reset
+         to start fresh. Dates are intentionally NOT copied. -->
+    <section id="past-trips-section" class="card hidden">
+      <h2>📋 Copy from a past trip</h2>
+      <p class="muted small">
+        Prefills origin, destination, travelers, approvers, notify
+        list, and pin behavior. Dates / flight info / ride choices
+        stay blank — those are usually different for a new trip.
+      </p>
+      <div id="past-trips-list" class="past-trips-list"></div>
+    </section>
+
     <!-- ===== 1. TRIP NAME ===== -->
     <section class="card">
       <h2><span class="sec-num">1</span> Trip name</h2>
