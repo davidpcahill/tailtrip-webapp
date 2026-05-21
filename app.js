@@ -1,22 +1,22 @@
-/* TailTrip Mini App — M4 full wizard.
+/* TailTrip Mini App — W2 single-page wizard.
  *
- * Vanilla JS state machine driving four screens:
- *   1. Origin (airport picker)
- *   2. Dates (single day or range; chip presets)
- *   3. Destination (airport picker)
- *   4. Summary + submit (auto-filled trip name, editable)
+ * Replaces M4's 4-step state machine with one scrolling form. The
+ * "state" is just the DOM — submit walks each section and gathers
+ * the current values. Two pieces of stateful UI persist outside the
+ * DOM tree because they need server-derived data:
  *
- * State lives in a single `state` object in this module. Step transitions
- * update the visible <section>, step indicator, and disable/enable
- * forward buttons based on validity.
+ *   - `selected.origin` / `selected.destination` — picked airport
+ *     objects. Stored separately so we don't have to look them back
+ *     up from the visible search results on submit.
+ *   - `airports` — the loaded airport directory.
  *
- * On submit the entire trip envelope ships back to the bot via
- * `Telegram.WebApp.sendData(JSON)`; the bot's `m4-wizard` dispatcher
- * (see src/tailtrip/bot/handlers/miniapp.py) emits the corresponding
- * domain events.
+ * Submit gates on: origin + destination + start date set. Other
+ * fields are optional (empty handle lists, min-approvals defaults
+ * to 0, announce-mode defaults to pinned).
  *
- * No build step. No framework. Keep this readable; the next dev to
- * touch it shouldn't need to learn anything but the DOM.
+ * Payload schema → `src/tailtrip/bot/handlers/miniapp_wizard.py`.
+ * Bot-side `_validate` is permissive about missing W2 fields so we
+ * remain compatible with the M4-era payload during rollout.
  */
 
 (function () {
@@ -28,32 +28,34 @@
     tg.expand();
   }
 
-  // ----- read URL params (carries target_chat_id from the bot) -----
-
+  // ----- read URL params -----
+  // Set by /newtrip when redirecting from a group → DM. Carries the
+  // group's chat_id + (optionally) a display name so we can show the
+  // user which chat their trip will land in.
   const url = new URLSearchParams(window.location.search);
   const TARGET_CHAT_ID = url.get("target") || null;
   const TARGET_CHAT_NAME = url.get("target_name") || null;
 
-  // ----- wizard state -----
+  if (TARGET_CHAT_NAME || TARGET_CHAT_ID) {
+    const banner = document.getElementById("target-banner");
+    const nameEl = document.getElementById("target-banner-name");
+    banner.classList.remove("hidden");
+    nameEl.textContent = TARGET_CHAT_NAME || "chat " + TARGET_CHAT_ID;
+  }
 
-  const state = {
-    step: 1,
-    origin: null,         // { iata, name, city, country, region }
-    destination: null,    // same shape
-    dateStart: null,      // ISO 'YYYY-MM-DD'
-    dateEnd: null,        // ISO or null
-    name: "",             // auto-filled; user-editable on summary
+  // ----- selection state (only what we can't derive from the DOM) -----
+  const selected = {
+    origin: null, // {iata, name, city, country, region}
+    destination: null,
   };
 
   // ----- airport directory -----
-
-  /** @type {Array<object>} */
   let airports = [];
   fetch("./airports.json", { cache: "force-cache" })
     .then((r) => r.json())
     .then((data) => {
       airports = data;
-      // If the user has already started typing, render now.
+      // Re-render any prior searches (in case user typed before fetch).
       renderPicker("origin");
       renderPicker("dest");
     })
@@ -62,7 +64,6 @@
     });
 
   // ----- ranking (mirrors domain/airports.py::search) -----
-
   function rankAirport(q, a) {
     const iata = a.iata.toLowerCase();
     const city = a.city.toLowerCase();
@@ -93,68 +94,39 @@
     return scored.slice(0, limit || 5).map((s) => s.a);
   }
 
-  // ----- step navigation -----
-
-  /** Show the view for the given step (1..4). Updates the indicator. */
-  function showStep(n) {
-    state.step = n;
-    // Toggle view visibility
-    for (const view of document.querySelectorAll("[data-view]")) {
-      view.classList.toggle("hidden", view.dataset.view !== viewFor(n));
-    }
-    // Update step indicator
-    const stepEls = document.querySelectorAll(".step");
-    const railEls = document.querySelectorAll(".step-rail");
-    stepEls.forEach((el, i) => {
-      const idx = i + 1;
-      el.classList.toggle("active", idx === n);
-      el.classList.toggle("done", idx < n);
-    });
-    railEls.forEach((el, i) => {
-      el.classList.toggle("done", i + 1 < n);
-    });
-    // Refresh summary when entering step 4
-    if (n === 4) refreshSummary();
-    // Scroll to top so the user sees the new view's header
-    window.scrollTo(0, 0);
+  function describeAirport(a) {
+    const where = a.region
+      ? a.city + ", " + a.region + ", " + a.country
+      : a.city + ", " + a.country;
+    return a.iata + " — " + a.name + " · " + where;
   }
 
-  function viewFor(step) {
-    return { 1: "origin", 2: "dates", 3: "destination", 4: "summary" }[step];
-  }
+  // ----- airport picker (shared origin + destination) -----
 
-  // ----- picker (origin + destination share the impl) -----
-
-  /**
-   * `which` is "origin" or "dest"; we map to the right input/list/state.
-   */
   function renderPicker(which) {
     const inputId = which === "origin" ? "origin-q" : "dest-q";
     const listId = which === "origin" ? "origin-results" : "dest-results";
     const selId = which === "origin" ? "origin-selection" : "dest-selection";
     const lineId = which === "origin" ? "origin-line" : "dest-line";
-    const nextId = which === "origin" ? "origin-next" : "dest-next";
     const stateKey = which === "origin" ? "origin" : "destination";
 
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
     const selEl = document.getElementById(selId);
     const lineEl = document.getElementById(lineId);
-    const nextBtn = document.getElementById(nextId);
 
     list.innerHTML = "";
     const q = input.value.trim();
+
     if (!q) {
-      // Empty query — keep prior selection visible if any.
-      const prior = state[stateKey];
+      const prior = selected[stateKey];
       if (prior) {
         selEl.classList.remove("hidden");
         lineEl.textContent = describeAirport(prior);
-        nextBtn.disabled = false;
       } else {
         selEl.classList.add("hidden");
-        nextBtn.disabled = true;
       }
+      refreshSubmitGate();
       return;
     }
 
@@ -170,28 +142,21 @@
     }
     for (const a of hits) {
       const li = makeResultRow(a, () => {
-        state[stateKey] = a;
+        selected[stateKey] = a;
         selEl.classList.remove("hidden");
         lineEl.textContent = describeAirport(a);
-        // Mark this row as selected; clear siblings
         for (const r of list.querySelectorAll(".result")) {
           r.classList.remove("selected");
         }
         li.classList.add("selected");
-        nextBtn.disabled = false;
+        autoFillTripName();
+        refreshSubmitGate();
       });
-      if (state[stateKey] && state[stateKey].iata === a.iata) {
+      if (selected[stateKey] && selected[stateKey].iata === a.iata) {
         li.classList.add("selected");
       }
       list.appendChild(li);
     }
-  }
-
-  function describeAirport(a) {
-    const where = a.region
-      ? a.city + ", " + a.region + ", " + a.country
-      : a.city + ", " + a.country;
-    return a.iata + " — " + a.name + " · " + where;
   }
 
   function makeResultRow(a, onPick) {
@@ -226,7 +191,6 @@
     return li;
   }
 
-  // Debounced search wiring
   function wirePicker(which) {
     const inputId = which === "origin" ? "origin-q" : "dest-q";
     const input = document.getElementById(inputId);
@@ -239,29 +203,23 @@
   wirePicker("origin");
   wirePicker("dest");
 
-  // ----- step 2: dates -----
+  // ----- date pickers + presets -----
 
   const dateStart = document.getElementById("date-start");
   const dateEnd = document.getElementById("date-end");
-  const datesNextBtn = document.getElementById("dates-next");
 
-  /** Compute ISO YYYY-MM-DD strings for date math. */
   function toISO(d) {
     return d.toISOString().slice(0, 10);
   }
-
-  /** Saturday/Sunday of *this* week. If it's already Sun/Mon evening,
-   *  this is "this past weekend" — that's fine; user can adjust. */
   function thisWeekend() {
     const today = new Date();
-    const dow = today.getDay(); // 0=Sun … 6=Sat
+    const dow = today.getDay();
     const sat = new Date(today);
     sat.setDate(today.getDate() + ((6 - dow) % 7 || 7));
     const sun = new Date(sat);
     sun.setDate(sat.getDate() + 1);
     return { start: toISO(sat), end: toISO(sun) };
   }
-
   function nextWeekend() {
     const tw = thisWeekend();
     const sat = new Date(tw.start);
@@ -270,7 +228,6 @@
     sun.setDate(sat.getDate() + 1);
     return { start: toISO(sat), end: toISO(sun) };
   }
-
   function nextWeek() {
     const today = new Date();
     const start = new Date(today);
@@ -279,33 +236,18 @@
     end.setDate(start.getDate() + 6);
     return { start: toISO(start), end: toISO(end) };
   }
-
   function setDates(start, end) {
-    state.dateStart = start || null;
-    state.dateEnd = end || null;
     dateStart.value = start || "";
     dateEnd.value = end || "";
-    refreshDatesNext();
+    refreshSubmitGate();
   }
-
-  function refreshDatesNext() {
-    datesNextBtn.disabled = !state.dateStart;
-  }
-
   dateStart.addEventListener("change", () => {
-    state.dateStart = dateStart.value || null;
-    // If the end is before the start, clear it
-    if (state.dateEnd && dateEnd.value && dateEnd.value < dateStart.value) {
-      state.dateEnd = null;
+    if (dateEnd.value && dateEnd.value < dateStart.value) {
       dateEnd.value = "";
     }
-    refreshDatesNext();
+    refreshSubmitGate();
   });
-
-  dateEnd.addEventListener("change", () => {
-    state.dateEnd = dateEnd.value || null;
-    refreshDatesNext();
-  });
+  dateEnd.addEventListener("change", refreshSubmitGate);
 
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", (e) => {
@@ -326,101 +268,78 @@
     });
   });
 
-  // ----- next / back / jump wiring -----
-
-  document.getElementById("origin-next").addEventListener("click", () => {
-    if (state.origin) showStep(2);
-  });
-  document.getElementById("dates-next").addEventListener("click", () => {
-    if (state.dateStart) showStep(3);
-  });
-  document.getElementById("dest-next").addEventListener("click", () => {
-    if (state.destination) showStep(4);
-  });
-
-  document.querySelectorAll(".btn-back").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.target;
-      const stepIdx = { origin: 1, dates: 2, destination: 3 }[target];
-      if (stepIdx) showStep(stepIdx);
-    });
-  });
-
-  document.querySelectorAll(".btn-link[data-jump]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.jump;
-      const stepIdx = { origin: 1, dates: 2, destination: 3 }[target];
-      if (stepIdx) showStep(stepIdx);
-    });
-  });
-
-  document.querySelectorAll('[data-action="close"]').forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (tg) tg.close();
-    });
-  });
-
-  // ----- step 4: summary -----
-
-  const tripNameInput = document.getElementById("trip-name");
-  tripNameInput.addEventListener("input", () => {
-    state.name = tripNameInput.value;
-  });
-
-  function refreshSummary() {
-    document.getElementById("summary-origin").textContent =
-      state.origin ? describeAirport(state.origin) : "—";
-    document.getElementById("summary-dest").textContent =
-      state.destination ? describeAirport(state.destination) : "—";
-
-    let dateLabel = "—";
-    if (state.dateStart && state.dateEnd && state.dateStart !== state.dateEnd) {
-      dateLabel = state.dateStart + " → " + state.dateEnd;
-    } else if (state.dateStart) {
-      dateLabel = state.dateStart;
+  // ----- auto-fill trip name -----
+  // Only fires if the field is empty OR holds the previous auto-fill.
+  // Once the user types something custom, we leave it alone.
+  let lastAutoFill = "";
+  function autoFillTripName() {
+    if (!selected.origin || !selected.destination) return;
+    const next = selected.origin.iata + " → " + selected.destination.iata;
+    const el = document.getElementById("trip-name");
+    if (!el.value || el.value === lastAutoFill) {
+      el.value = next;
+      lastAutoFill = next;
     }
-    document.getElementById("summary-dates").textContent = dateLabel;
+  }
 
-    // Auto-fill trip name on first arrival to step 4 if user hasn't
-    // typed anything custom yet. Re-arriving keeps their edit.
-    if (!state.name && state.origin && state.destination) {
-      state.name = state.origin.iata + " → " + state.destination.iata;
-      tripNameInput.value = state.name;
-    }
+  // ----- submit gating -----
 
-    // Target chat hint
-    const noteEl = document.getElementById("summary-target-note");
-    if (TARGET_CHAT_NAME) {
-      noteEl.classList.remove("hidden");
-      document.getElementById("summary-target").textContent = TARGET_CHAT_NAME;
-    } else if (TARGET_CHAT_ID) {
-      noteEl.classList.remove("hidden");
-      document.getElementById("summary-target").textContent =
-        "chat " + TARGET_CHAT_ID;
+  const submitBtn = document.getElementById("submit-btn");
+  const submitHint = document.getElementById("submit-hint");
+  function refreshSubmitGate() {
+    const missing = [];
+    if (!selected.origin) missing.push("origin");
+    if (!dateStart.value) missing.push("start date");
+    if (!selected.destination) missing.push("destination");
+    if (missing.length) {
+      submitBtn.disabled = true;
+      submitHint.textContent =
+        "Still need: " + missing.join(", ") + ".";
     } else {
-      noteEl.classList.add("hidden");
+      submitBtn.disabled = false;
+      submitHint.textContent = "Ready to create — submit when you're set.";
     }
+  }
+
+  // ----- handle list parsing -----
+  // Permissive on the frontend: bot-side `_clean_handles` is the
+  // source of truth for validation, dedup, and casing. We just split
+  // on commas/whitespace and forward.
+  function parseHandles(raw) {
+    if (!raw) return [];
+    return raw
+      .split(/[\s,]+/)
+      .map((h) => h.trim())
+      .filter(Boolean);
   }
 
   // ----- submit -----
 
-  document.getElementById("submit-btn").addEventListener("click", () => {
-    if (!state.origin || !state.destination || !state.dateStart) {
-      // Should never get here — the Next buttons gate. Defensive.
-      alert("Please fill in all steps before submitting.");
-      return;
-    }
+  submitBtn.addEventListener("click", () => {
+    if (submitBtn.disabled) return;
     const payload = {
       type: "m4-wizard",
       ts: Date.now(),
       trip: {
-        name: (state.name || "").trim() ||
-              (state.origin.iata + " → " + state.destination.iata),
+        name: (document.getElementById("trip-name").value || "").trim() ||
+              (selected.origin.iata + " → " + selected.destination.iata),
         target_chat_id: TARGET_CHAT_ID ? Number(TARGET_CHAT_ID) : null,
-        origin: state.origin,
-        destination: state.destination,
-        start_date: state.dateStart,
-        end_date: state.dateEnd,
+        origin: selected.origin,
+        destination: selected.destination,
+        start_date: dateStart.value,
+        end_date: dateEnd.value || null,
+        // W2 additions:
+        traveler_handles: parseHandles(
+          document.getElementById("traveler-handles").value
+        ),
+        notify_handles: parseHandles(
+          document.getElementById("notify-handles").value
+        ),
+        approver_handles: parseHandles(
+          document.getElementById("approver-handles").value
+        ),
+        min_approvals: pickedRadio("min-approvals", "0"),
+        announce_mode: pickedRadio("announce-mode", "pinned"),
       },
     };
     if (tg) {
@@ -431,7 +350,13 @@
     }
   });
 
-  // ----- boot -----
+  function pickedRadio(name, fallback) {
+    const checked = document.querySelector(
+      'input[name="' + name + '"]:checked'
+    );
+    return checked ? checked.value : fallback;
+  }
 
-  showStep(1);
+  // ----- boot -----
+  refreshSubmitGate();
 })();

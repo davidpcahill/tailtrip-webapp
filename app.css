@@ -554,6 +554,119 @@ body {
  * the same; surface + ink invert. Keeps the bot recognizable in both
  * modes without two separate stylesheets.
  */
+/* ===========================================================
+ * W2 single-page wizard additions
+ *
+ * The M4 step indicator + step-card layout is gone; sections are
+ * just stacked cards. New patterns added here:
+ *   - .banner: persistent "trip will land in {chat}" notice up top
+ *   - .sec-num: numbered circle on each section header
+ *   - .text-input: plain-text input (handles, trip name)
+ *   - .radio-group: fieldset with stacked radios
+ *   - .submit-row: sticky bottom-ish submit button + reason hint
+ * =========================================================== */
+
+.banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--sky-soft, #E6F0F7);
+  border: 1px solid var(--sky, #5B8FAF);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.banner-icon {
+  font-size: 1.4em;
+}
+.banner-title {
+  font-size: 0.8em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.banner-value {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sec-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  background: var(--fox-orange, #E66B3D);
+  color: white;
+  font-size: 0.75em;
+  font-weight: 700;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.text-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.text-input:focus {
+  outline: 2px solid var(--fox-orange, #E66B3D);
+  outline-offset: -1px;
+}
+
+.radio-group {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.radio-group legend {
+  font-size: 0.85em;
+  color: var(--ink-muted);
+  padding: 0 6px;
+}
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.radio input[type="radio"] {
+  accent-color: var(--fox-orange, #E66B3D);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.submit-row {
+  position: sticky;
+  bottom: 0;
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--cream);
+  border-top: 1px solid var(--hairline);
+  z-index: 10;
+}
+.submit-row .btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05em;
+}
+.submit-row .muted {
+  text-align: center;
+  margin-top: 8px;
+  display: block;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --cream:     #1F1C19;

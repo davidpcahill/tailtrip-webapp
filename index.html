@@ -9,32 +9,68 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+  <!--
+    W2 — single-page scrolling wizard.
+
+    Replaces the M4 4-step wizard with one long form. Every section
+    is always rendered; user fills them in any order. Submit gathers
+    state from the DOM (not a JS state machine) so what-you-see-is-
+    what-you-send.
+
+    Section order matches DESIGN.md §V3 wizard mockup:
+      1. Trip name (auto-fill suggestion)
+      2. From (airport search)
+      3. When (dates)
+      4. To (airport search)
+      5. Other travelers (comma @handles)
+      6. Notify list (comma @handles)
+      7. Approvers (comma @handles) + min approvals
+      8. Pin mode (pinned / topic)
+      9. Submit
+
+    Deferred to other W-series:
+      - Picker UI for travelers/notify/approvers (W3 — text input for now)
+      - Chat-channel picker (W5 — shows target as info text)
+      - Multi-leg editor with per-leg ride flow (W4/W7 — single flight default)
+      - Copy from past trip (future)
+  -->
   <main id="app" class="container">
     <header class="brand">
       <div class="brand-mark">🦊</div>
       <div class="brand-text">
         <div class="brand-title">TailTrip</div>
-        <div class="brand-tagline">plan a visit</div>
+        <div class="brand-tagline">plan a trip</div>
       </div>
     </header>
 
-    <!-- step indicator: 1—2—3—4 with current highlighted -->
-    <div class="steps" id="steps" aria-label="wizard progress">
-      <div class="step" data-step="1"><span class="step-num">1</span><span class="step-label">From</span></div>
-      <div class="step-rail"></div>
-      <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">When</span></div>
-      <div class="step-rail"></div>
-      <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">To</span></div>
-      <div class="step-rail"></div>
-      <div class="step" data-step="4"><span class="step-num">4</span><span class="step-label">Confirm</span></div>
+    <!-- Target chat banner — only when /newtrip handed us a group -->
+    <div id="target-banner" class="banner hidden">
+      <div class="banner-icon">📢</div>
+      <div class="banner-text">
+        <div class="banner-title">Trip will live in</div>
+        <div class="banner-value" id="target-banner-name"></div>
+      </div>
     </div>
 
-    <!-- ===== STEP 1: ORIGIN ===== -->
-    <section class="card view" data-view="origin">
-      <h2>Where are you coming from?</h2>
-      <p class="muted">
-        Type a city, IATA code, or part of an airport name.
+    <!-- ===== 1. TRIP NAME ===== -->
+    <section class="card">
+      <h2><span class="sec-num">1</span> Trip name</h2>
+      <p class="muted small">
+        We'll auto-fill from your route — edit anytime.
       </p>
+      <input
+        id="trip-name"
+        class="text-input"
+        type="text"
+        maxlength="80"
+        autocomplete="off"
+        placeholder="e.g. SJC → SEA"
+      >
+    </section>
+
+    <!-- ===== 2. FROM ===== -->
+    <section class="card">
+      <h2><span class="sec-num">2</span> From <span class="muted small">(where you're starting)</span></h2>
 
       <div class="search-wrap">
         <input
@@ -54,23 +90,13 @@
         <div class="small">selected</div>
         <div id="origin-line" class="selection-line"></div>
       </div>
-
-      <div class="actions">
-        <button id="origin-next" class="btn btn-primary" disabled>
-          Next →
-        </button>
-        <button class="btn btn-ghost btn-close" data-action="close">
-          ✕ Cancel
-        </button>
-      </div>
     </section>
 
-    <!-- ===== STEP 2: DATES ===== -->
-    <section class="card view hidden" data-view="dates">
-      <h2>When are you traveling?</h2>
-      <p class="muted">
-        Pick a single day or a date range. Times come later — just the
-        days here.
+    <!-- ===== 3. WHEN ===== -->
+    <section class="card">
+      <h2><span class="sec-num">3</span> When</h2>
+      <p class="muted small">
+        Pick a single day or a date range. Times come later — just days here.
       </p>
 
       <div class="date-fields">
@@ -78,35 +104,23 @@
           <span>Start</span>
           <input id="date-start" class="date-input" type="date">
         </label>
-        <label class="date-label" id="date-end-wrap">
+        <label class="date-label">
           <span>End <span class="small muted">(optional)</span></span>
           <input id="date-end" class="date-input" type="date">
         </label>
       </div>
 
       <div class="date-presets">
-        <button class="chip" data-preset="weekend">This weekend</button>
-        <button class="chip" data-preset="next-weekend">Next weekend</button>
-        <button class="chip" data-preset="next-week">Next week</button>
-        <button class="chip" data-preset="clear">Clear</button>
-      </div>
-
-      <div class="actions">
-        <button id="dates-next" class="btn btn-primary" disabled>
-          Next →
-        </button>
-        <button class="btn btn-ghost btn-back" data-target="origin">
-          ← Back
-        </button>
+        <button type="button" class="chip" data-preset="weekend">This weekend</button>
+        <button type="button" class="chip" data-preset="next-weekend">Next weekend</button>
+        <button type="button" class="chip" data-preset="next-week">Next week</button>
+        <button type="button" class="chip" data-preset="clear">Clear</button>
       </div>
     </section>
 
-    <!-- ===== STEP 3: DESTINATION ===== -->
-    <section class="card view hidden" data-view="destination">
-      <h2>Where are you going?</h2>
-      <p class="muted">
-        Same search as before — city, IATA, or partial name.
-      </p>
+    <!-- ===== 4. TO ===== -->
+    <section class="card">
+      <h2><span class="sec-num">4</span> To <span class="muted small">(final destination)</span></h2>
 
       <div class="search-wrap">
         <input
@@ -126,70 +140,120 @@
         <div class="small">selected</div>
         <div id="dest-line" class="selection-line"></div>
       </div>
-
-      <div class="actions">
-        <button id="dest-next" class="btn btn-primary" disabled>
-          Next →
-        </button>
-        <button class="btn btn-ghost btn-back" data-target="dates">
-          ← Back
-        </button>
-      </div>
     </section>
 
-    <!-- ===== STEP 4: SUMMARY ===== -->
-    <section class="card view hidden" data-view="summary">
-      <h2>Looks good?</h2>
-      <p class="muted">
-        Confirm the trip name and submit. You can edit details later
-        from the trip's menu in chat.
+    <!-- ===== 5. TRAVELERS ===== -->
+    <section class="card">
+      <h2>
+        <span class="sec-num">5</span> Other travelers
+        <span class="muted small">(optional)</span>
+      </h2>
+      <p class="muted small">
+        You're added automatically. Add @handles for anyone else coming.
+        Comma- or space-separated. Real-name picker is coming — for now type
+        the handle.
       </p>
-
-      <div class="summary-row">
-        <div class="summary-label">Trip name</div>
-        <input
-          id="trip-name"
-          class="search-input"
-          type="text"
-          maxlength="80"
-          autocomplete="off"
-        >
-      </div>
-
-      <div class="summary-row">
-        <div class="summary-label">From</div>
-        <div class="summary-value" id="summary-origin"></div>
-        <button class="btn-link" data-jump="origin">edit</button>
-      </div>
-
-      <div class="summary-row">
-        <div class="summary-label">When</div>
-        <div class="summary-value" id="summary-dates"></div>
-        <button class="btn-link" data-jump="dates">edit</button>
-      </div>
-
-      <div class="summary-row">
-        <div class="summary-label">To</div>
-        <div class="summary-value" id="summary-dest"></div>
-        <button class="btn-link" data-jump="destination">edit</button>
-      </div>
-
-      <div id="summary-target-note" class="muted small target-note hidden">
-        The board will land in <strong id="summary-target"></strong>.
-      </div>
-
-      <div class="actions">
-        <button id="submit-btn" class="btn btn-primary">
-          🦊 Create trip
-        </button>
-        <button class="btn btn-ghost btn-back" data-target="destination">
-          ← Back
-        </button>
-      </div>
+      <input
+        id="traveler-handles"
+        class="text-input"
+        type="text"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        placeholder="e.g. @alice, @bob"
+      >
     </section>
+
+    <!-- ===== 6. NOTIFY LIST ===== -->
+    <section class="card">
+      <h2>
+        <span class="sec-num">6</span> Also notify
+        <span class="muted small">(optional)</span>
+      </h2>
+      <p class="muted small">
+        People who aren't traveling but should hear updates — e.g. concerned
+        parents, group admins. Same @handle format.
+      </p>
+      <input
+        id="notify-handles"
+        class="text-input"
+        type="text"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        placeholder="e.g. @mom"
+      >
+    </section>
+
+    <!-- ===== 7. APPROVERS ===== -->
+    <section class="card">
+      <h2>
+        <span class="sec-num">7</span> Approvers
+        <span class="muted small">(optional)</span>
+      </h2>
+      <p class="muted small">
+        Hosts whose approval gates the trip from NEGOTIATING → AGREED.
+        Leave empty to auto-agree.
+      </p>
+      <input
+        id="approver-handles"
+        class="text-input"
+        type="text"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        placeholder="e.g. @carol"
+      >
+
+      <fieldset class="radio-group">
+        <legend>Min approvals required</legend>
+        <label class="radio">
+          <input type="radio" name="min-approvals" value="0" checked>
+          <span>0 — auto-agree</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="min-approvals" value="1">
+          <span>1 host</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="min-approvals" value="2">
+          <span>2 hosts</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="min-approvals" value="all">
+          <span>All hosts</span>
+        </label>
+      </fieldset>
+    </section>
+
+    <!-- ===== 8. PIN MODE ===== -->
+    <section class="card">
+      <h2><span class="sec-num">8</span> Pin behavior</h2>
+      <fieldset class="radio-group">
+        <legend>How should the board live in the chat?</legend>
+        <label class="radio">
+          <input type="radio" name="announce-mode" value="pinned" checked>
+          <span>📌 Pinned message — default</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="announce-mode" value="topic">
+          <span>🧵 Forum topic — only if the chat is forum-enabled</span>
+        </label>
+      </fieldset>
+    </section>
+
+    <!-- ===== SUBMIT ===== -->
+    <div class="submit-row">
+      <button id="submit-btn" type="button" class="btn btn-primary" disabled>
+        🦊 Create trip
+      </button>
+      <div id="submit-hint" class="muted small">
+        Pick an origin, dates, and a destination to enable.
+      </div>
+    </div>
 
     <footer class="footnote">
-      <span>v0.4 · M4 wizard</span>
+      <span>v0.5 · W2 single-page wizard</span>
     </footer>
   </main>
 
