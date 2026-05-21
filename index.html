@@ -149,19 +149,10 @@
         <span class="muted small">(optional)</span>
       </h2>
       <p class="muted small">
-        You're added automatically. Add @handles for anyone else coming.
-        Comma- or space-separated. Real-name picker is coming — for now type
-        the handle.
+        You're added automatically. Tap suggestions below or type an
+        @handle and press Enter to add an outsider.
       </p>
-      <input
-        id="traveler-handles"
-        class="text-input"
-        type="text"
-        autocomplete="off"
-        autocapitalize="none"
-        spellcheck="false"
-        placeholder="e.g. @alice, @bob"
-      >
+      <div id="traveler-picker" class="people-picker"></div>
     </section>
 
     <!-- ===== 6. NOTIFY LIST ===== -->
@@ -172,17 +163,9 @@
       </h2>
       <p class="muted small">
         People who aren't traveling but should hear updates — e.g. concerned
-        parents, group admins. Same @handle format.
+        parents, group admins.
       </p>
-      <input
-        id="notify-handles"
-        class="text-input"
-        type="text"
-        autocomplete="off"
-        autocapitalize="none"
-        spellcheck="false"
-        placeholder="e.g. @mom"
-      >
+      <div id="notify-picker" class="people-picker"></div>
     </section>
 
     <!-- ===== 7. APPROVERS ===== -->
@@ -195,15 +178,7 @@
         Hosts whose approval gates the trip from NEGOTIATING → AGREED.
         Leave empty to auto-agree.
       </p>
-      <input
-        id="approver-handles"
-        class="text-input"
-        type="text"
-        autocomplete="off"
-        autocapitalize="none"
-        spellcheck="false"
-        placeholder="e.g. @carol"
-      >
+      <div id="approver-picker" class="people-picker"></div>
 
       <fieldset class="radio-group">
         <legend>Min approvals required</legend>

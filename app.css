@@ -647,6 +647,144 @@ body {
   flex-shrink: 0;
 }
 
+/* ===========================================================
+ * W3 people picker — chip-style multi-select.
+ *
+ * Anatomy (top to bottom inside .people-picker):
+ *   1. .picker-chips      already-selected handles as removable chips
+ *   2. .picker-input      text search / type-to-add input
+ *   3. .picker-dropdown   candidate suggestions + "add outsider" row
+ *
+ * Three instances live in the wizard (travelers / notify / approvers)
+ * and they share this styling. Chips are buttons so they're keyboard-
+ * accessible; clicking removes.
+ * =========================================================== */
+
+.people-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.picker-empty {
+  font-size: 0.85em;
+  color: var(--ink-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.picker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--fox-orange, #E66B3D);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.picker-chip:hover {
+  background: var(--ember, #C8531E);
+}
+/* Outsider chips (custom-typed @handles not in the candidate set)
+ * get a different color so the user can see at a glance that the
+ * bot doesn't know who they are yet — they'll show up under the
+ * N2 "NOT YET REACHED" badge until they /start the bot. */
+.picker-chip-outsider {
+  background: var(--sky, #5B8FAF);
+}
+.picker-chip-outsider:hover {
+  background: #3F7090;
+}
+
+.picker-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.picker-input:focus {
+  outline: 2px solid var(--fox-orange, #E66B3D);
+  outline-offset: -1px;
+}
+
+.picker-dropdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.picker-dropdown:empty {
+  display: none;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--hairline);
+}
+.picker-row:last-child {
+  border-bottom: none;
+}
+.picker-row:hover {
+  background: var(--cream);
+}
+
+.picker-row-handle {
+  font-weight: 500;
+}
+.picker-row-badge {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 8px;
+  color: white;
+}
+.picker-via-buddy {
+  background: var(--forest, #4C7C5C);
+}
+.picker-via-chat {
+  background: var(--sky, #5B8FAF);
+}
+.picker-via-grant {
+  background: var(--fox-orange, #E66B3D);
+}
+
+.picker-row-add {
+  color: var(--fox-orange, #E66B3D);
+  font-style: italic;
+}
+.picker-row-hint {
+  color: var(--ink-muted);
+  font-size: 0.85em;
+  cursor: default;
+  font-style: italic;
+}
+.picker-row-hint:hover {
+  background: transparent;
+}
+
 .submit-row {
   position: sticky;
   bottom: 0;

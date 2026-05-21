@@ -372,17 +372,228 @@
     }
   }
 
-  // ----- handle list parsing -----
-  // Permissive on the frontend: bot-side `_clean_handles` is the
-  // source of truth for validation, dedup, and casing. We just split
-  // on commas/whitespace and forward.
-  function parseHandles(raw) {
-    if (!raw) return [];
-    return raw
-      .split(/[\s,]+/)
-      .map((h) => h.trim())
-      .filter(Boolean);
+  // ----- W3 people picker -----
+  // Decode the `people` URL param the bot pre-loaded with the
+  // creator's candidate set. Same defensive decode pattern as
+  // chats (returns [] on any malformed input).
+  function decodePeople(encoded) {
+    if (!encoded) return [];
+    try {
+      const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
+      const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data
+        .filter(
+          (p) =>
+            p &&
+            typeof p.id === "number" &&
+            typeof p.handle === "string" &&
+            typeof p.via === "string"
+        )
+        .map((p) => ({ id: p.id, handle: p.handle, via: p.via }));
+    } catch (err) {
+      console.warn("people decode failed:", err);
+      return [];
+    }
   }
+  const PEOPLE_CANDIDATES = decodePeople(url.get("people") || null);
+
+  /**
+   * Build a multi-select chip picker into the container.
+   *
+   * Three of these are instantiated (travelers, notify, approvers).
+   * Each maintains its OWN selected set so removing @alice from
+   * "travelers" doesn't unselect her from "approvers".
+   *
+   * Public surface:
+   *   - createPeoplePicker(containerId, candidates, opts) → {getValues, clear}
+   *   - getValues() returns the current handle list (lowercased + deduped
+   *     by the bot-side cleaner, but we forward casing as the user typed it)
+   *
+   * UX:
+   *   - Selected handles render as removable chips at the top
+   *   - A search input below filters candidates by handle substring
+   *   - Click a candidate → chip
+   *   - Type a custom @handle + Enter → outsider chip (any string matching
+   *     `^@?[A-Za-z][A-Za-z0-9_]{3,31}$` — same rule as bot's `_HANDLE_RE`)
+   *   - Click an existing chip → remove
+   *
+   * Custom @handles get an "outsider" badge so the user can see which
+   * ones aren't from their resolved candidate set.
+   */
+  function createPeoplePicker(containerId, candidates, opts) {
+    opts = opts || {};
+    const container = document.getElementById(containerId);
+    if (!container) return { getValues: () => [], clear: () => {} };
+
+    // `selected` is the source of truth — array of {handle, via} preserving
+    // insertion order. `via` for outsiders is "custom".
+    const selected = [];
+
+    // Build chrome
+    const chipsBox = document.createElement("div");
+    chipsBox.className = "picker-chips";
+    const input = document.createElement("input");
+    input.type = "search";
+    input.className = "picker-input";
+    input.placeholder = opts.placeholder || "Search or type @handle…";
+    input.autocomplete = "off";
+    input.autocapitalize = "none";
+    input.spellcheck = false;
+    const dropdown = document.createElement("ul");
+    dropdown.className = "picker-dropdown";
+    container.appendChild(chipsBox);
+    container.appendChild(input);
+    container.appendChild(dropdown);
+
+    function isAlreadySelected(handle) {
+      const k = handle.toLowerCase();
+      return selected.some((s) => s.handle.toLowerCase() === k);
+    }
+
+    function addHandle(handle, via) {
+      handle = handle.replace(/^@/, "");
+      if (!handle || isAlreadySelected(handle)) return;
+      selected.push({ handle: handle, via: via || "custom" });
+      renderChips();
+      input.value = "";
+      renderDropdown();
+    }
+
+    function removeHandle(handle) {
+      const k = handle.toLowerCase();
+      const idx = selected.findIndex((s) => s.handle.toLowerCase() === k);
+      if (idx >= 0) {
+        selected.splice(idx, 1);
+        renderChips();
+        renderDropdown();
+      }
+    }
+
+    function renderChips() {
+      chipsBox.innerHTML = "";
+      if (!selected.length) {
+        const empty = document.createElement("div");
+        empty.className = "picker-empty";
+        empty.textContent = "Nobody selected yet.";
+        chipsBox.appendChild(empty);
+        return;
+      }
+      for (const s of selected) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "picker-chip";
+        if (s.via === "custom") chip.classList.add("picker-chip-outsider");
+        chip.title = "Click to remove";
+        chip.textContent = "@" + s.handle + " ✕";
+        chip.addEventListener("click", () => removeHandle(s.handle));
+        chipsBox.appendChild(chip);
+      }
+    }
+
+    // Same handle rule as bot's _HANDLE_RE — relaxed to 4 chars min so
+    // test fixtures stay short. Telegram's true minimum is 5.
+    const HANDLE_RE = /^@?([A-Za-z][A-Za-z0-9_]{3,31})$/;
+
+    function renderDropdown() {
+      dropdown.innerHTML = "";
+      const q = input.value.trim().toLowerCase().replace(/^@/, "");
+      let matches = candidates;
+      if (q) {
+        matches = candidates.filter((c) =>
+          c.handle.toLowerCase().includes(q)
+        );
+      }
+      // Skip already-selected candidates
+      matches = matches.filter((c) => !isAlreadySelected(c.handle));
+
+      if (!matches.length) {
+        // Offer "Add @handle" if the typed text looks like a valid
+        // outsider handle — covers the "person I know isn't on my
+        // resolver list" case.
+        if (q && HANDLE_RE.test(q)) {
+          const li = document.createElement("li");
+          li.className = "picker-row picker-row-add";
+          li.textContent = "+ Add @" + q + " (not in your contacts)";
+          li.addEventListener("click", () => addHandle(q, "custom"));
+          dropdown.appendChild(li);
+        } else if (q) {
+          const li = document.createElement("li");
+          li.className = "picker-row picker-row-hint";
+          li.textContent = "No match. Try typing the full @handle.";
+          dropdown.appendChild(li);
+        } else if (!candidates.length) {
+          const li = document.createElement("li");
+          li.className = "picker-row picker-row-hint";
+          li.textContent = "No suggestions yet. Type an @handle to add anyone.";
+          dropdown.appendChild(li);
+        }
+        return;
+      }
+      for (const c of matches.slice(0, 12)) {
+        const li = document.createElement("li");
+        li.className = "picker-row";
+        const handleEl = document.createElement("span");
+        handleEl.className = "picker-row-handle";
+        handleEl.textContent = "@" + c.handle;
+        const badge = document.createElement("span");
+        badge.className = "picker-row-badge picker-via-" + c.via;
+        badge.textContent = _viaLabel(c.via);
+        li.appendChild(handleEl);
+        li.appendChild(badge);
+        li.addEventListener("click", () => addHandle(c.handle, c.via));
+        dropdown.appendChild(li);
+      }
+    }
+
+    input.addEventListener("input", renderDropdown);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const q = input.value.trim().replace(/^@/, "");
+        if (HANDLE_RE.test(q)) {
+          addHandle(q, "custom");
+        }
+      }
+    });
+
+    // Initial render
+    renderChips();
+    renderDropdown();
+
+    return {
+      getValues: () => selected.map((s) => s.handle),
+      clear: () => {
+        selected.length = 0;
+        renderChips();
+        renderDropdown();
+      },
+    };
+  }
+
+  function _viaLabel(via) {
+    if (via === "buddy") return "co-traveler";
+    if (via === "chat") return "in your chats";
+    if (via === "grant") return "place-granted";
+    return "added";
+  }
+
+  const travelerPicker = createPeoplePicker(
+    "traveler-picker",
+    PEOPLE_CANDIDATES,
+    { placeholder: "Search names or type @handle…" }
+  );
+  const notifyPicker = createPeoplePicker(
+    "notify-picker",
+    PEOPLE_CANDIDATES,
+    { placeholder: "Search or type @handle…" }
+  );
+  const approverPicker = createPeoplePicker(
+    "approver-picker",
+    PEOPLE_CANDIDATES,
+    { placeholder: "Search or type @handle…" }
+  );
 
   // ----- submit -----
 
@@ -409,16 +620,13 @@
         destination: selected.destination,
         start_date: dateStart.value,
         end_date: dateEnd.value || null,
-        // W2 additions:
-        traveler_handles: parseHandles(
-          document.getElementById("traveler-handles").value
-        ),
-        notify_handles: parseHandles(
-          document.getElementById("notify-handles").value
-        ),
-        approver_handles: parseHandles(
-          document.getElementById("approver-handles").value
-        ),
+        // W3: roster fields now come from the multi-select pickers.
+        // Each picker maintains its own selected set so the same
+        // @handle can appear in multiple lists (e.g. a traveler
+        // who's also an approver) without one removing the other.
+        traveler_handles: travelerPicker.getValues(),
+        notify_handles: notifyPicker.getValues(),
+        approver_handles: approverPicker.getValues(),
         min_approvals: pickedRadio("min-approvals", "0"),
         announce_mode: pickedRadio("announce-mode", "pinned"),
       },
