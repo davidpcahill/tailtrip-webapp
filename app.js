@@ -31,10 +31,39 @@
   // ----- read URL params -----
   // Set by /newtrip when redirecting from a group → DM. Carries the
   // group's chat_id + (optionally) a display name so we can show the
-  // user which chat their trip will land in.
+  // user which chat their trip will land in. W5 adds `chats` which
+  // is a base64-urlsafe JSON list of chats the user could pick from.
   const url = new URLSearchParams(window.location.search);
   const TARGET_CHAT_ID = url.get("target") || null;
   const TARGET_CHAT_NAME = url.get("target_name") || null;
+  const CHATS_ENCODED = url.get("chats") || null;
+
+  // W5: decode the candidate chat list. Empty list / decode failure →
+  // wizard hides the picker section and falls back to TARGET_CHAT_ID
+  // (or DM if neither is set). Mirrors `decode_candidates` in
+  // src/tailtrip/bot/chat_picker.py.
+  function decodeChats(encoded) {
+    if (!encoded) return [];
+    try {
+      const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
+      const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data
+        .filter(
+          (c) =>
+            c &&
+            typeof c.id === "number" &&
+            typeof c.title === "string" &&
+            typeof c.type === "string"
+        )
+        .map((c) => ({ id: c.id, title: c.title, type: c.type }));
+    } catch (err) {
+      console.warn("chat decode failed:", err);
+      return [];
+    }
+  }
+  const CHAT_CANDIDATES = decodeChats(CHATS_ENCODED);
 
   if (TARGET_CHAT_NAME || TARGET_CHAT_ID) {
     const banner = document.getElementById("target-banner");
@@ -42,6 +71,48 @@
     banner.classList.remove("hidden");
     nameEl.textContent = TARGET_CHAT_NAME || "chat " + TARGET_CHAT_ID;
   }
+
+  // W5: render the chat picker if we have candidates. Otherwise hide
+  // the whole section so the wizard isn't cluttered with a useless
+  // empty box. Selected value defaults to the redirected-from target
+  // when there is one, else the most-recent chat, else "dm".
+  function renderChatPicker() {
+    const section = document.getElementById("chat-picker-section");
+    const group = document.getElementById("chat-picker-group");
+    if (!CHAT_CANDIDATES.length) {
+      section.classList.add("hidden");
+      return;
+    }
+    section.classList.remove("hidden");
+    group.innerHTML = "<legend>Trip board location</legend>";
+    const targetId = TARGET_CHAT_ID ? Number(TARGET_CHAT_ID) : null;
+    // "DM only" choice — always present so the user can opt out of a
+    // group if they want a solo trip. Stored as id=0 in the radio
+    // value; submit translates back to target_chat_id=null.
+    const dmRow = makeChatRow(0, "💬 DM only — just me", "dm", targetId === null);
+    group.appendChild(dmRow);
+    for (const c of CHAT_CANDIDATES) {
+      const icon = c.type === "supergroup" || c.type === "group" ? "👥" : "📢";
+      const label = `${icon} ${c.title}`;
+      group.appendChild(makeChatRow(c.id, label, c.type, c.id === targetId));
+    }
+  }
+  function makeChatRow(chatId, label, type, checked) {
+    const wrap = document.createElement("label");
+    wrap.className = "radio";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "target-chat";
+    input.value = String(chatId);
+    input.dataset.type = type;
+    if (checked) input.checked = true;
+    const span = document.createElement("span");
+    span.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(span);
+    return wrap;
+  }
+  renderChatPicker();
 
   // ----- selection state (only what we can't derive from the DOM) -----
   const selected = {
@@ -317,13 +388,23 @@
 
   submitBtn.addEventListener("click", () => {
     if (submitBtn.disabled) return;
+    // W5: resolve the chosen target chat. Picker shown → use its
+    // value; "DM only" → null. Picker hidden → fall back to the
+    // bot-supplied TARGET_CHAT_ID (legacy /newtrip-from-group path)
+    // or null (DM trip).
+    let targetChatId = TARGET_CHAT_ID ? Number(TARGET_CHAT_ID) : null;
+    if (CHAT_CANDIDATES.length) {
+      const picked = pickedRadio("target-chat", "0");
+      const n = Number(picked);
+      targetChatId = n === 0 ? null : n;
+    }
     const payload = {
       type: "m4-wizard",
       ts: Date.now(),
       trip: {
         name: (document.getElementById("trip-name").value || "").trim() ||
               (selected.origin.iata + " → " + selected.destination.iata),
-        target_chat_id: TARGET_CHAT_ID ? Number(TARGET_CHAT_ID) : null,
+        target_chat_id: targetChatId,
         origin: selected.origin,
         destination: selected.destination,
         start_date: dateStart.value,

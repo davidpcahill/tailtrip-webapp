@@ -226,9 +226,27 @@
       </fieldset>
     </section>
 
-    <!-- ===== 8. PIN MODE ===== -->
+    <!-- ===== 8. WHERE THE TRIP LIVES (W5 chat picker) =====
+         Only shown when the bot included a `chats` URL param
+         (which it does whenever the user has at least one chat
+         where bot+user can both pin). Otherwise this section
+         hides and the trip defaults to the DM (or target chat
+         if /newtrip routed from a group). -->
+    <section id="chat-picker-section" class="card hidden">
+      <h2><span class="sec-num">8</span> Where does the trip live?</h2>
+      <p class="muted small">
+        Pick a chat where I can pin the trip board. Only chats where
+        both you and I have <em>Pin messages</em> rights show up here.
+      </p>
+      <fieldset class="radio-group" id="chat-picker-group">
+        <legend>Trip board location</legend>
+        <!-- Radio choices injected by app.js -->
+      </fieldset>
+    </section>
+
+    <!-- ===== 9. PIN MODE ===== -->
     <section class="card">
-      <h2><span class="sec-num">8</span> Pin behavior</h2>
+      <h2><span class="sec-num">9</span> Pin behavior</h2>
       <fieldset class="radio-group">
         <legend>How should the board live in the chat?</legend>
         <label class="radio">
