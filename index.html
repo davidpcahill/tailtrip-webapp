@@ -142,6 +142,99 @@
       </div>
     </section>
 
+    <!-- ===== 4a. FLIGHT INFO (W2.5) =====
+         Optional but encouraged — without flight_no we can't track
+         delays/cancellations, and the N7a nag will pester them
+         later. Time inputs let the leave-by reminder (N3) compute
+         a useful "head out the door" moment. -->
+    <section class="card">
+      <h2>
+        <span class="sec-num">4a</span> Flight info
+        <span class="muted small">(optional but recommended)</span>
+      </h2>
+      <p class="muted small">
+        Add the flight number and times if you know them. Without these,
+        I can't track delays for you — you'll get a nag later asking
+        for the number.
+      </p>
+      <div class="flight-fields">
+        <label class="flight-label">
+          <span>Flight number</span>
+          <input
+            id="flight-no"
+            class="text-input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="e.g. UA123, WN4195"
+          >
+        </label>
+        <div class="flight-times">
+          <label class="flight-label">
+            <span>Dep time <span class="small muted">(UTC)</span></span>
+            <input id="dep-time" class="date-input" type="time" step="60">
+          </label>
+          <label class="flight-label">
+            <span>Arr time <span class="small muted">(UTC)</span></span>
+            <input id="arr-time" class="date-input" type="time" step="60">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 4b. RIDE ASKS (W2.5) =====
+         Two sides — to the dep airport, from the arr airport. Each
+         is one of: I've got it (Uber/walking/own car), Request from
+         someone (picker), or Skip (decide later via DM prompt). -->
+    <section class="card">
+      <h2><span class="sec-num">4b</span> Need a ride?</h2>
+      <p class="muted small">
+        How are you getting <em>to</em> the airport and <em>from</em>
+        the destination airport? Pick "request" to ask someone, "I've
+        got it" if you're handling it yourself, or leave as "decide
+        later" and I'll DM you about it.
+      </p>
+
+      <fieldset class="radio-group">
+        <legend id="ride-to-legend">Ride <strong>to</strong> the airport</legend>
+        <label class="radio">
+          <input type="radio" name="ride-to-mode" value="tbd" checked>
+          <span>⏳ Decide later (I'll DM you)</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="ride-to-mode" value="self">
+          <span>🚗 I've got it (Uber, own car, walking)</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="ride-to-mode" value="request">
+          <span>📇 Request from someone</span>
+        </label>
+        <div id="ride-to-picker-wrap" class="ride-picker-wrap hidden">
+          <div id="ride-to-picker" class="people-picker"></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="radio-group">
+        <legend id="ride-from-legend">Ride <strong>from</strong> the airport</legend>
+        <label class="radio">
+          <input type="radio" name="ride-from-mode" value="tbd" checked>
+          <span>⏳ Decide later (I'll DM you)</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="ride-from-mode" value="self">
+          <span>🚗 I've got it</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="ride-from-mode" value="request">
+          <span>📇 Request from someone</span>
+        </label>
+        <div id="ride-from-picker-wrap" class="ride-picker-wrap hidden">
+          <div id="ride-from-picker" class="people-picker"></div>
+        </div>
+      </fieldset>
+    </section>
+
     <!-- ===== 5. TRAVELERS ===== -->
     <section class="card">
       <h2>

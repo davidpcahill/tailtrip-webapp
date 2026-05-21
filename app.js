@@ -594,6 +594,37 @@
     PEOPLE_CANDIDATES,
     { placeholder: "Search or type @handle…" }
   );
+  // W2.5: ride pickers, one per side. Only shown when mode=request
+  // is selected via the radio. Same reusable picker as the roster
+  // sections — same candidate set + outsider fallback.
+  const rideToPicker = createPeoplePicker(
+    "ride-to-picker",
+    PEOPLE_CANDIDATES,
+    { placeholder: "Who's driving you to the airport?" }
+  );
+  const rideFromPicker = createPeoplePicker(
+    "ride-from-picker",
+    PEOPLE_CANDIDATES,
+    { placeholder: "Who's picking you up?" }
+  );
+  // Show/hide each ride picker based on its radio. Triggered on
+  // change; initial state is hidden (default radio = tbd).
+  function wireRideRadios(side) {
+    const wrap = document.getElementById("ride-" + side + "-picker-wrap");
+    document
+      .querySelectorAll('input[name="ride-' + side + '-mode"]')
+      .forEach((r) =>
+        r.addEventListener("change", () => {
+          if (r.checked && r.value === "request") {
+            wrap.classList.remove("hidden");
+          } else if (r.checked) {
+            wrap.classList.add("hidden");
+          }
+        })
+      );
+  }
+  wireRideRadios("to");
+  wireRideRadios("from");
 
   // ----- submit -----
 
@@ -629,6 +660,12 @@
         approver_handles: approverPicker.getValues(),
         min_approvals: pickedRadio("min-approvals", "0"),
         announce_mode: pickedRadio("announce-mode", "pinned"),
+        // W2.5: flight info + ride asks inline.
+        flight_no: (document.getElementById("flight-no").value || "").trim() || null,
+        dep_time: document.getElementById("dep-time").value || null,
+        arr_time: document.getElementById("arr-time").value || null,
+        ride_to: collectRide("to"),
+        ride_from: collectRide("from"),
       },
     };
     if (tg) {
@@ -644,6 +681,18 @@
       'input[name="' + name + '"]:checked'
     );
     return checked ? checked.value : fallback;
+  }
+
+  // W2.5: gather the ride selection for one side into the payload shape
+  // the bot expects ({mode, asked: [handles]}). The picker's getValues()
+  // is only consulted in "request" mode; otherwise asked is empty.
+  function collectRide(side) {
+    const mode = pickedRadio("ride-" + side + "-mode", "tbd");
+    const picker = side === "to" ? rideToPicker : rideFromPicker;
+    return {
+      mode: mode,
+      asked: mode === "request" ? picker.getValues() : [],
+    };
   }
 
   // ----- boot -----

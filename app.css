@@ -648,6 +648,42 @@ body {
 }
 
 /* ===========================================================
+ * W2.5 flight info + ride asks
+ *
+ * Flight: number input on its own line, times side-by-side.
+ * Ride asks: standard radio-group with a picker-wrap that shows
+ * only when "request" is selected.
+ * =========================================================== */
+
+.flight-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.flight-times {
+  display: flex;
+  gap: 12px;
+}
+.flight-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  font-size: 0.9em;
+}
+.flight-label > span {
+  color: var(--ink-muted);
+}
+
+.ride-picker-wrap {
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--cream);
+  border-radius: 8px;
+  border-left: 3px solid var(--fox-orange, #E66B3D);
+}
+
+/* ===========================================================
  * W3 people picker — chip-style multi-select.
  *
  * Anatomy (top to bottom inside .people-picker):
