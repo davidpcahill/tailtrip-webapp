@@ -48,6 +48,17 @@
   const emptyEl = document.getElementById("empty");
   const errorEl = document.getElementById("error");
 
+  // ---- live mode (#125): opened from the menu as ?trip_id=&api= ----
+  // Fetch the trip detail from the read-only API and render a basic live
+  // view. The full Revisions/Messages timeline is #115; this is the
+  // grounded "tap a trip → see its real state" slice.
+  const liveTripId = url.get("trip_id");
+  const liveApi = (url.get("api") || "").replace(/\/+$/, "");
+  if (!snapshot && liveTripId && liveApi) {
+    renderLive(liveTripId, liveApi);
+    return;
+  }
+
   if (!snapshot) {
     errorEl.classList.remove("hidden");
     return;
@@ -226,5 +237,102 @@
     const e = document.createElement(tag);
     if (cls) e.className = cls;
     return e;
+  }
+
+  // ---- live mode renderer (#125) ----
+
+  async function renderLive(tripId, apiBase) {
+    const tg2 = window.Telegram && window.Telegram.WebApp;
+    const initData = (tg2 && tg2.initData) || "";
+    tripNameEl.textContent = "…";
+    tripMetaEl.textContent = "loading…";
+    let trip;
+    try {
+      const res = await fetch(apiBase + "/api/trip/" + encodeURIComponent(tripId), {
+        headers: { "X-Telegram-Init-Data": initData },
+      });
+      if (!res.ok) throw new Error("http-" + res.status);
+      trip = await res.json();
+    } catch (e) {
+      errorEl.classList.remove("hidden");
+      tripMetaEl.textContent = "couldn't load this trip";
+      return;
+    }
+
+    tripNameEl.textContent = trip.name || "(unnamed trip)";
+    const metaBits = [String(trip.status || "").toUpperCase()];
+    if (trip.latest_rev_no) metaBits.push("rev " + trip.latest_rev_no);
+    const q = trip.quorum;
+    if (q) {
+      metaBits.push("hosts " + q.approving_host_user_ids.length + "/" + q.min_host_count);
+      const paxHave = q.confirmed_traveler_user_ids.filter((u) =>
+        q.required_traveler_user_ids.includes(u)
+      ).length;
+      const paxNeed =
+        q.required_traveler_user_ids.length + q.required_traveler_unbound_handles.length;
+      metaBits.push("pax " + paxHave + "/" + paxNeed);
+    }
+    tripMetaEl.textContent = metaBits.join(" · ");
+
+    boardEl.innerHTML = "";
+
+    // waiting-on banner
+    if (q && !q.is_satisfied && q.waiting_on_user_ids.length) {
+      const w = el("div", "live-banner");
+      w.textContent = "🟡 Waiting on " + q.waiting_on_user_ids.length + " to confirm.";
+      boardEl.appendChild(w);
+    }
+    if (trip.status === "booked") {
+      const b = el("div", "live-banner");
+      b.textContent = "🎫 Tickets booked — changes need everyone's re-approval.";
+      boardEl.appendChild(b);
+    }
+
+    // roster
+    const roster = el("div", "live-section");
+    const rt = el("div", "live-section-title");
+    rt.textContent = "Who's coming";
+    roster.appendChild(rt);
+    (trip.participants || [])
+      .filter((p) => p.roles.indexOf("traveler") >= 0)
+      .forEach((p) => {
+        const r = el("div", "live-row");
+        const confirmed = p.confirmed_rev_no === trip.latest_rev_no;
+        r.textContent =
+          (p.declined ? "❌ " : confirmed ? "✅ " : "⚪ ") + "@" + p.handle;
+        roster.appendChild(r);
+      });
+    boardEl.appendChild(roster);
+
+    // travel events
+    if ((trip.travel_events || []).length) {
+      const legs = el("div", "live-section");
+      const lt = el("div", "live-section-title");
+      lt.textContent = "Travel";
+      legs.appendChild(lt);
+      trip.travel_events.forEach((te) => {
+        const r = el("div", "live-row");
+        const route =
+          (te.dep_iata || "?") + " → " + (te.arr_iata || "?");
+        const who = te.operator_handle ? " · @" + te.operator_handle : "";
+        const fl = te.flight_no ? " · " + te.flight_no : "";
+        r.textContent = modeGlyph(te.mode) + " " + route + fl + who;
+        legs.appendChild(r);
+      });
+      boardEl.appendChild(legs);
+    }
+  }
+
+  function modeGlyph(mode) {
+    return (
+      {
+        flight: "✈️",
+        drive: "🚗",
+        train: "🚆",
+        boat: "⛴️",
+        walk: "🚶",
+        other: "•",
+      }[mode] || "•"
+    );
   }
 })();

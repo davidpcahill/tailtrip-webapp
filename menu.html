@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#E66B3D">
+  <title>TailTrip</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="menu.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <!--
+    V4 (#125) — the Mini App MAIN MENU, the "do everything from here" home.
+    Opened by /openapp. Cards:
+      1. Quick start    — Plan a trip / Copy past (always work; link to wizard)
+      2. Your trips     — live cards from GET /api/menu (needs api= param)
+      3. Needs you      — GET /api/inbox
+      4. Search         — GET /api/search?q=
+      5. Where am I going — next trip + board link
+
+    Graceful degradation: with no `api=` param (or the API unreachable),
+    the data cards show a friendly "not connected" hint, but Quick start
+    still opens the wizard. So the menu is safe to ship before the API
+    tunnel is up.
+  -->
+  <main id="app" class="container">
+    <header class="menu-head">
+      <div class="brand">
+        <div class="brand-mark">🦊</div>
+        <div class="brand-text">
+          <div class="brand-title">TailTrip</div>
+          <div class="brand-tagline" id="who">your trips</div>
+        </div>
+      </div>
+      <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+    </header>
+
+    <!-- 1. Quick start (always available) -->
+    <section class="card">
+      <div class="card-title">Quick start</div>
+      <div class="quick-grid">
+        <button id="new-trip" class="quick-btn">
+          <span class="quick-emoji">➕</span>
+          <span>Plan a new trip</span>
+        </button>
+        <button id="copy-trip" class="quick-btn">
+          <span class="quick-emoji">📋</span>
+          <span>Copy a past trip</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. Needs you (inbox) -->
+    <section class="card" id="inbox-card">
+      <div class="card-title">
+        Needs you <span class="count-badge hidden" id="inbox-count">0</span>
+      </div>
+      <div id="inbox-list" class="stack"></div>
+      <div id="inbox-empty" class="muted-row hidden">Nothing needs you right now. ✨</div>
+    </section>
+
+    <!-- 3. Your active trips -->
+    <section class="card" id="trips-card">
+      <div class="card-title">Your trips</div>
+      <div id="trips-list" class="stack"></div>
+      <div id="trips-empty" class="muted-row hidden">
+        No active trips yet — plan one above.
+      </div>
+    </section>
+
+    <!-- 4. Search -->
+    <section class="card" id="search-card">
+      <div class="card-title">Search</div>
+      <input
+        type="search"
+        id="search-input"
+        class="search-box"
+        placeholder="trip name, person, place…"
+        autocomplete="off"
+      />
+      <div id="search-results" class="stack"></div>
+    </section>
+
+    <!-- not-connected banner (shown when api= missing / unreachable) -->
+    <div id="offline-note" class="offline-note hidden">
+      <span>📡</span>
+      <span>
+        Live trip data isn’t connected yet. You can still plan a trip above —
+        the rest lights up once the API is reachable.
+      </span>
+    </div>
+
+    <footer class="footnote">
+      <span>v0.9 · main menu</span>
+    </footer>
+  </main>
+
+  <script src="menu.js"></script>
+</body>
+</html>

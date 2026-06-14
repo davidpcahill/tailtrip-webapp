@@ -10,29 +10,30 @@
 </head>
 <body>
   <!--
-    W2 — single-page scrolling wizard.
+    Single-page scrolling wizard. Replaces the M4-era 4-step state
+    machine. Every section is always rendered; user fills them in any
+    order. Submit gathers state from the DOM (not a JS state machine)
+    so what-you-see-is-what-you-send.
 
-    Replaces the M4 4-step wizard with one long form. Every section
-    is always rendered; user fills them in any order. Submit gathers
-    state from the DOM (not a JS state machine) so what-you-see-is-
-    what-you-send.
+    Section order (matches DESIGN.md §V3 wizard mockup):
+      0. Copy from past trip   (W2.5 — only shown when ?past= URL param)
+      1. Trip name             (auto-fill from from→to)
+      2. From                  (airport search)
+      3. When                  (dates)
+      4. To                    (airport search)
+      4a. Flight info          (W2.5 — flight no, dep/arr time)
+      4b. Ride asks            (W2.5 — to-airport / from-airport mode + handles)
+      5. Other travelers       (W3 picker — chips + outsider handle entry)
+      6. Notify list           (W3 picker)
+      7. Approvers + min approvals  (W3 picker)
+      8. Pin mode              (pinned / topic)
+      9. Chat target           (W5 picker — pin-capable chats)
+      10. Submit
 
-    Section order matches DESIGN.md §V3 wizard mockup:
-      1. Trip name (auto-fill suggestion)
-      2. From (airport search)
-      3. When (dates)
-      4. To (airport search)
-      5. Other travelers (comma @handles)
-      6. Notify list (comma @handles)
-      7. Approvers (comma @handles) + min approvals
-      8. Pin mode (pinned / topic)
-      9. Submit
-
-    Deferred to other W-series:
-      - Picker UI for travelers/notify/approvers (W3 — text input for now)
-      - Chat-channel picker (W5 — shows target as info text)
-      - Multi-leg editor with per-leg ride flow (W4/W7 — single flight default)
-      - Copy from past trip (future)
+    Next: V4 — this wizard stays as the trip-creation path; a new main
+    menu (`?view=menu` route) becomes the Mini App's home for managing
+    existing trips, search, and the "Needs you" inbox. See DESIGN.md
+    §V4 / §V4.1.
   -->
   <main id="app" class="container">
     <header class="brand">
@@ -354,7 +355,7 @@
     </div>
 
     <footer class="footnote">
-      <span>v0.5 · W2 single-page wizard</span>
+      <span>v0.8 · single-page wizard</span>
     </footer>
   </main>
 

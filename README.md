@@ -29,8 +29,9 @@ through the bot's existing event handlers.
 
 | File              | Purpose |
 |-------------------|---------|
-| `index.html`      | Wizard entry — 4-step trip-creation flow (Origin → When → Destination → Confirm) |
-| `board.html`      | Live Board view — per-traveler 11-stage progress, opened from `/board` |
+| `menu.html`       | **Main menu** (#125) — the V4 home, opened by `/openapp`. Cards: Quick start, Needs-you inbox, Your trips, Search. Fetches live data from the API (`?api=` param); degrades gracefully (wizard still works) when the API isn't connected. |
+| `index.html`      | Wizard entry — single-page form (name, from, when, to, flight, rides, travelers, notify, approvers, chat target, pin mode). Reached from the menu's "Plan a trip". |
+| `board.html`      | Live Board view — snapshot mode (`?snapshot=`, from `/board`) OR live mode (`?trip_id=&api=`, opened from the menu — fetches `/api/trip/{id}`). |
 | `app.css`         | Shared fox-themed design tokens + layout. CSS custom properties drive the palette. Dark-mode via media query. |
 | `board.css`       | Board-only styles (stage dots, route ribbon, traveler card) |
 | `app.js`          | Wizard logic + airport-search ranking (mirrors `domain/airports.py`) |
@@ -82,8 +83,10 @@ After deploying, the bot needs to know the URL. Set in `.env`:
 TAILTRIP_MINIAPP_URL=https://davidpcahill.github.io/tailtrip-webapp/
 ```
 
-When set, `/newtrip` opens the Mini App wizard in DM. When unset, the
-bot falls back to the legacy inline-keyboard wizard.
+When set, `/newtrip` opens the Mini App wizard in DM. **Required since
+W7** — the chat-side inline wizard fallback was deleted. With the var
+unset, `/newtrip` posts a clear setup error instead of silently falling
+through to a parallel wizard nobody maintains.
 
 Optional: register the URL with BotFather (`/setmenubutton`) so the
 Mini App also appears as the bot's persistent menu button. Per-message
@@ -94,4 +97,5 @@ buttons via `KeyboardButton(web_app=...)` work without registration.
 Each `.js` file's IIFE comment includes a version. Bump when shipping
 a breaking change to the bot ↔ Mini App JSON contract.
 
-Current: **v0.6 · M6 live board**.
+Current: **v0.8 · W-series consolidated wizard + N-series notification reliability**.
+Next: V4 — Mini App main menu + read-only JSON backend (see `DESIGN.md` §V4 / §V4.1).

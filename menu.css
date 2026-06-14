@@ -1,0 +1,143 @@
+/* TailTrip main menu (#125) — menu-specific styles layered on app.css.
+   Reuses the fox palette tokens defined in app.css :root. */
+
+.menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.menu-head .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.menu-head .brand-mark { font-size: 28px; }
+.menu-head .brand-title { font-weight: 700; font-size: 20px; color: var(--ink); }
+.menu-head .brand-tagline { font-size: 12px; color: var(--ink-muted); }
+
+.icon-btn {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ink-muted);
+}
+.icon-btn:active { background: var(--cream); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count-badge {
+  background: var(--fox-orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  letter-spacing: 0;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 12px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.quick-btn:active { border-color: var(--fox-orange); }
+.quick-emoji { font-size: 22px; }
+
+.stack { display: flex; flex-direction: column; gap: 8px; }
+
+/* a tappable list row (trip card, inbox item, search hit) */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+}
+.row:active { border-color: var(--fox-orange); }
+.row-glyph { font-size: 18px; flex-shrink: 0; }
+.row-body { flex: 1; min-width: 0; }
+.row-title { font-weight: 600; font-size: 15px; }
+.row-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+.row-chev { color: var(--ink-muted); font-size: 16px; flex-shrink: 0; }
+
+.muted-row { color: var(--ink-muted); font-size: 14px; padding: 4px 2px; }
+
+.search-box {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.search-box:focus { outline: none; border-color: var(--fox-orange); }
+
+.offline-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #fff7f0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+}
+
+.hidden { display: none !important; }
+
+/* status dot colors for trip rows */
+.dot-agreed { color: var(--forest); }
+.dot-booked { color: var(--forest); }
+.dot-negotiating { color: var(--fox-orange); }
+.dot-requested { color: var(--ink-muted); }
+.dot-cancelled { color: var(--ember); }

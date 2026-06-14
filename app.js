@@ -1,9 +1,8 @@
-/* TailTrip Mini App — W2 single-page wizard.
+/* TailTrip Mini App — single-page wizard.
  *
- * Replaces M4's 4-step state machine with one scrolling form. The
- * "state" is just the DOM — submit walks each section and gathers
- * the current values. Two pieces of stateful UI persist outside the
- * DOM tree because they need server-derived data:
+ * The "state" is just the DOM — submit walks each section and
+ * gathers the current values. Two pieces of stateful UI persist
+ * outside the DOM tree because they need server-derived data:
  *
  *   - `selected.origin` / `selected.destination` — picked airport
  *     objects. Stored separately so we don't have to look them back
@@ -15,8 +14,13 @@
  * to 0, announce-mode defaults to pinned).
  *
  * Payload schema → `src/tailtrip/bot/handlers/miniapp_wizard.py`.
- * Bot-side `_validate` is permissive about missing W2 fields so we
- * remain compatible with the M4-era payload during rollout.
+ * The bot-side `_validate` is permissive about missing fields so
+ * older clients (and the rollout window itself) stay compatible.
+ *
+ * Next: V4 splits this app into a router — wizard stays at this
+ * URL, but `?view=menu` lands the main menu, `?view=board&trip_id=`
+ * lands the live board (currently a separate board.html). See
+ * DESIGN.md §V4.
  */
 
 (function () {

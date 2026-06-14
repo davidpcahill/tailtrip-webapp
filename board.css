@@ -177,3 +177,32 @@
   /* No box-shadow so we don't bleed into the cards above; the spacing
    * itself signals separation. */
 }
+
+/* ---- live mode (#125) — board.html opened as ?trip_id=&api= ---- */
+.live-banner {
+  background: #fff7f0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.live-section { margin-bottom: 14px; }
+.live-section-title {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+.live-row {
+  padding: 8px 10px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
