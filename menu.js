@@ -24,6 +24,10 @@
 
   const params = new URLSearchParams(window.location.search);
   const API = (params.get("api") || "").replace(/\/+$/, "");
+  // Deep-link token: an initData-independent credential the bot minted
+  // into the URL. Used as a fallback for clients (Telegram macOS) that
+  // launch the Mini App without initData. Forwarded in X-TailTrip-Token.
+  const TOKEN = params.get("tok") || "";
 
   function readInitData() {
     // Primary: the SDK-parsed signed launch string.
@@ -56,7 +60,10 @@
     // Returns parsed JSON, or throws. Caller handles the offline state.
     if (!API) throw new Error("no-api");
     const res = await fetch(API + path, {
-      headers: { "X-Telegram-Init-Data": initData },
+      headers: {
+        "X-Telegram-Init-Data": initData,
+        "X-TailTrip-Token": TOKEN,
+      },
     });
     if (!res.ok) throw new Error("http-" + res.status);
     return res.json();
@@ -115,6 +122,7 @@
     const fwd = new URLSearchParams();
     fwd.set("trip_id", tripId);
     if (API) fwd.set("api", API);
+    if (TOKEN) fwd.set("tok", TOKEN);
     window.location.href = "board.html?" + fwd.toString();
   }
 
@@ -178,6 +186,7 @@
       why +
       " · tg=" + (hasTg ? "yes" : "no") +
       " · initData=" + initLen + "b" +
+      " · tok=" + TOKEN.length + "b" +
       " · plat=" + plat +
       " · v=" + ver +
       " · unsafeKeys=" + unsafeKeys +
