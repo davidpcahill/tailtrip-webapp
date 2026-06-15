@@ -107,11 +107,41 @@
 
   // ----- offline (no API) state -----
 
-  function goOffline() {
-    el("offline-note").classList.remove("hidden");
+  function goOffline(reason) {
+    const note = el("offline-note");
+    note.classList.remove("hidden");
+    // Surface WHY we're offline so a stuck "not connected" is debuggable
+    // on screen — no server-log digging. `reason` is a short non-secret
+    // diagnostic; initLen tells us whether Telegram handed us initData
+    // at all (0 = opened outside Telegram or initData not populated).
+    if (reason) {
+      let diag = note.querySelector(".offline-diag");
+      if (!diag) {
+        diag = document.createElement("div");
+        diag.className = "offline-diag";
+        diag.style.cssText =
+          "margin-top:8px;font-size:12px;opacity:.6;font-family:monospace";
+        note.appendChild(diag);
+      }
+      diag.textContent = reason;
+    }
     el("trips-card").classList.add("hidden");
     el("inbox-card").classList.add("hidden");
     el("search-card").classList.add("hidden");
+  }
+
+  function offlineReason(err) {
+    const hasTg = !!tg;
+    const initLen = initData.length;
+    const m = (err && err.message) || "";
+    let why;
+    if (!API) why = "no api= in link";
+    else if (m === "no-api") why = "no api= in link";
+    else if (m.indexOf("http-401") === 0)
+      why = "API rejected sign-in (401)";
+    else if (m.indexOf("http-") === 0) why = "API error " + m.slice(5);
+    else why = "API unreachable (network/CORS)";
+    return why + " · tg=" + (hasTg ? "yes" : "no") + " · initData=" + initLen + "b";
   }
 
   // ----- render: menu (trips) -----
@@ -219,7 +249,7 @@
 
   async function boot() {
     if (!API) {
-      goOffline();
+      goOffline(offlineReason(new Error("no-api")));
       return;
     }
     try {
@@ -230,8 +260,9 @@
       renderTrips(menu);
       renderInbox(inbox);
     } catch (err) {
-      // API configured but unreachable / unauthorized → offline hint.
-      goOffline();
+      // API configured but unreachable / unauthorized → offline hint,
+      // with the specific reason shown on screen.
+      goOffline(offlineReason(err));
     }
   }
 
