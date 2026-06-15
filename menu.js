@@ -24,7 +24,27 @@
 
   const params = new URLSearchParams(window.location.search);
   const API = (params.get("api") || "").replace(/\/+$/, "");
-  const initData = (tg && tg.initData) || "";
+
+  function readInitData() {
+    // Primary: the SDK-parsed signed launch string.
+    if (tg && tg.initData) return tg.initData;
+    // Fallback: Telegram appends the launch payload to the URL hash as
+    //   #tgWebAppData=<urlencoded initData>&tgWebAppVersion=...&...
+    // Some clients (notably Telegram Desktop / macOS) populate that hash
+    // but leave `tg.initData` an empty string. `tgWebAppData` decodes to
+    // exactly the `auth_date=…&user=…&hash=…` query string our API
+    // verifies, so reading it straight from the hash recovers auth.
+    try {
+      const h = (window.location.hash || "").replace(/^#/, "");
+      const d = new URLSearchParams(h).get("tgWebAppData");
+      if (d) return d;
+    } catch (e) {
+      /* no hash / parse failure → fall through to empty */
+    }
+    return "";
+  }
+
+  const initData = readInitData();
 
   // ----- helpers -----
 
