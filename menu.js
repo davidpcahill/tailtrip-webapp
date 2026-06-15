@@ -137,11 +137,33 @@
     let why;
     if (!API) why = "no api= in link";
     else if (m === "no-api") why = "no api= in link";
-    else if (m.indexOf("http-401") === 0)
-      why = "API rejected sign-in (401)";
+    else if (m.indexOf("http-401") === 0) why = "API rejected sign-in (401)";
     else if (m.indexOf("http-") === 0) why = "API error " + m.slice(5);
     else why = "API unreachable (network/CORS)";
-    return why + " · tg=" + (hasTg ? "yes" : "no") + " · initData=" + initLen + "b";
+
+    // Deeper launch-context introspection — only matters when initData
+    // is empty (initLen=0). Tells empty-because-not-launched-as-MiniApp
+    // apart from a client bug where the unsigned `initDataUnsafe` is
+    // populated but the signed `initData` string isn't exposed.
+    const plat = (tg && tg.platform) || "?";
+    const ver = (tg && tg.version) || "?";
+    const unsafe = (tg && tg.initDataUnsafe) || {};
+    const unsafeKeys = Object.keys(unsafe).length;
+    const hasUser = !!(unsafe && unsafe.user);
+    const hashHasData =
+      typeof location !== "undefined" &&
+      location.hash.indexOf("tgWebAppData") !== -1;
+
+    return (
+      why +
+      " · tg=" + (hasTg ? "yes" : "no") +
+      " · initData=" + initLen + "b" +
+      " · plat=" + plat +
+      " · v=" + ver +
+      " · unsafeKeys=" + unsafeKeys +
+      " · user=" + (hasUser ? "yes" : "no") +
+      " · hashData=" + (hashHasData ? "yes" : "no")
+    );
   }
 
   // ----- render: menu (trips) -----
