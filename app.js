@@ -334,8 +334,15 @@
     refreshSubmitGate();
   }
   dateStart.addEventListener("change", () => {
-    if (dateEnd.value && dateEnd.value < dateStart.value) {
-      dateEnd.value = "";
+    // Keep end ≥ start: floor the native end picker at start, and when
+    // end is empty or now-before-start, snap it up to start (a same-day
+    // trip is valid; the user can bump it later). Previously we just
+    // CLEARED end, which felt broken.
+    if (dateStart.value) {
+      dateEnd.min = dateStart.value;
+      if (!dateEnd.value || dateEnd.value < dateStart.value) {
+        dateEnd.value = dateStart.value;
+      }
     }
     refreshSubmitGate();
   });
@@ -813,8 +820,32 @@
         ride_from: collectRide("from"),
       },
     };
-    if (tg) {
-      tg.sendData(JSON.stringify(payload));
+    if (tg && typeof tg.sendData === "function") {
+      // `sendData` ONLY works when the Mini App was launched from a
+      // reply-keyboard button — Telegram closes the app on success. If
+      // it was opened via the menu button or an inline/group button,
+      // sendData silently no-ops and the app stays open. So: optimistic
+      // "Submitting…", and if we're still alive a beat later, tell the
+      // user the one launch that works today (DM /tailtrip). The real
+      // fix is a write API endpoint (works from any launch) — tracked.
+      submitBtn.disabled = true;
+      submitHint.textContent = "Submitting…";
+      try {
+        tg.sendData(JSON.stringify(payload));
+      } catch (e) {
+        submitBtn.disabled = false;
+        submitHint.textContent =
+          "Couldn't submit (" + ((e && e.message) || e) + ").";
+        return;
+      }
+      setTimeout(() => {
+        // Still here → the launch context can't sendData.
+        submitBtn.disabled = false;
+        submitHint.textContent =
+          "Couldn't submit from this launch. Open the bot in a DM and " +
+          "send /tailtrip there, then create the trip — submitting only " +
+          "works from the DM launch for now.";
+      }, 2500);
     } else {
       alert("Not in Telegram; payload would have been:\n" +
             JSON.stringify(payload, null, 2));
