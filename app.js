@@ -381,6 +381,61 @@
     }
   }
 
+  // ----- flight number: normalize + live feedback (#134) -----
+  // Telegram/IATA flight numbers are an airline code (2 alphanumerics,
+  // e.g. UA, WN, B6, F9) + 1–4 digits. Accept spaces/dashes/lowercase
+  // and any of "F9 3406", "f9-3406", "UA123" → canonical "F9 3406".
+  const FLIGHT_RE = /^([A-Za-z][A-Za-z0-9]|[A-Za-z0-9][A-Za-z])\s*-?\s*(\d{1,4})$/;
+  function normalizeFlightNo(raw) {
+    const s = (raw || "").trim();
+    if (!s) return { empty: true, ok: false, canonical: null };
+    const m = s.replace(/\s+/g, " ").match(FLIGHT_RE);
+    if (!m) return { empty: false, ok: false, canonical: null };
+    return { empty: false, ok: true, canonical: m[1].toUpperCase() + " " + m[2] };
+  }
+  const flightNoInput = document.getElementById("flight-no");
+  const flightHint = document.getElementById("flight-hint");
+  if (flightNoInput && flightHint) {
+    flightNoInput.addEventListener("input", () => {
+      const r = normalizeFlightNo(flightNoInput.value);
+      if (r.empty) {
+        flightHint.textContent = "";
+      } else if (r.ok) {
+        flightHint.textContent = "✓ Flight " + r.canonical + " — I'll track it.";
+        flightHint.style.opacity = "0.85";
+      } else {
+        flightHint.textContent =
+          "Hmm — expected an airline code + number, e.g. UA123 or F9 3406.";
+        flightHint.style.opacity = "0.6";
+      }
+    });
+  }
+
+  // ----- pin-where note: name the selected board location (#135) -----
+  function updatePinWhere() {
+    const note = document.getElementById("pin-where");
+    if (!note) return;
+    let where = "your DM";
+    if (CHAT_CANDIDATES.length) {
+      const picked = document.querySelector('input[name="target-chat"]:checked');
+      if (picked && picked.value !== "0") {
+        const c = CHAT_CANDIDATES.find((x) => String(x.id) === picked.value);
+        where = c ? c.title : "the selected chat";
+      }
+    } else if (TARGET_CHAT_NAME || TARGET_CHAT_ID) {
+      where = TARGET_CHAT_NAME || "the chat";
+    }
+    note.innerHTML =
+      "Where the board posts: <strong>" + where + "</strong>." +
+      (CHAT_CANDIDATES.length
+        ? " Change it in the section above."
+        : " Pick a chat above to post in a group instead.");
+  }
+  document
+    .querySelectorAll('input[name="target-chat"]')
+    .forEach((r) => r.addEventListener("change", updatePinWhere));
+  updatePinWhere();
+
   // ----- submit gating -----
 
   const submitBtn = document.getElementById("submit-btn");
@@ -812,8 +867,13 @@
         approver_handles: approverPicker.getValues(),
         min_approvals: pickedRadio("min-approvals", "0"),
         announce_mode: pickedRadio("announce-mode", "pinned"),
-        // W2.5: flight info + ride asks inline.
-        flight_no: (document.getElementById("flight-no").value || "").trim() || null,
+        // W2.5: flight info + ride asks inline. Send the canonical form
+        // ("F9 3406") when it parses, else the raw text (bot parser is
+        // the backstop) — never silently drop what the user typed.
+        flight_no:
+          normalizeFlightNo(document.getElementById("flight-no").value).canonical ||
+          (document.getElementById("flight-no").value || "").trim() ||
+          null,
         dep_time: document.getElementById("dep-time").value || null,
         arr_time: document.getElementById("arr-time").value || null,
         ride_to: collectRide("to"),

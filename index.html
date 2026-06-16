@@ -183,8 +183,9 @@
             autocomplete="off"
             autocapitalize="characters"
             spellcheck="false"
-            placeholder="e.g. UA123, WN4195"
+            placeholder="e.g. UA123, WN4195, F9 3406"
           >
+          <div id="flight-hint" class="muted small"></div>
         </label>
         <div class="flight-times">
           <label class="flight-label">
@@ -210,6 +211,11 @@
         the destination airport? Pick "request" to ask someone, "I've
         got it" if you're handling it yourself, or leave as "decide
         later" and I'll DM you about it.
+      </p>
+      <p class="muted small">
+        ℹ️ Telegram doesn't let apps read your phone contacts. Type an
+        <strong>@handle</strong> to ask anyone; suggestions only appear
+        for people you share a group or past trip with.
       </p>
 
       <fieldset class="radio-group">
@@ -331,6 +337,10 @@
     <!-- ===== 9. PIN MODE ===== -->
     <section class="card">
       <h2><span class="sec-num">9</span> Pin behavior</h2>
+      <p class="muted small" id="pin-where">
+        Where the board posts: <strong>your DM</strong>. Pick a chat in
+        the section above to post it in a group instead.
+      </p>
       <fieldset class="radio-group">
         <legend>How should the board live in the chat?</legend>
         <label class="radio">
@@ -339,9 +349,16 @@
         </label>
         <label class="radio">
           <input type="radio" name="announce-mode" value="topic">
-          <span>🧵 Forum topic — only if the chat is forum-enabled</span>
+          <span>🧵 Forum topic</span>
         </label>
       </fieldset>
+      <p class="muted small">
+        <strong>Pinned:</strong> I post the board and pin it in the chat
+        (I need <em>Pin messages</em> permission there — I'll warn you if
+        I can't). <strong>Forum topic:</strong> I open a dedicated topic
+        for the trip — only works in a forum-enabled supergroup where I'm
+        an admin; otherwise it falls back to a pinned message.
+      </p>
     </section>
 
     <!-- ===== SUBMIT ===== -->
